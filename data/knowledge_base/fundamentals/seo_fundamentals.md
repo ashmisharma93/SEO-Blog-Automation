@@ -1,0 +1,159 @@
+---
+title: SEO Fundamentals
+category: fundamentals
+source: Google Search Central Documentation
+domain: search_engine_optimization
+---
+
+# SEO Fundamentals
+
+## Definition of SEO
+
+Search Engine Optimization (SEO) is the practice of improving a website’s visibility in organic search engine results. It enables search engines to interpret and understand web content while helping users discover relevant information through search queries. SEO focuses on aligning website structure, content, and technical configuration with search engine guidelines. While specific ranking positions are never guaranteed, adherence to established best practices—such as those outlined in Google’s Search Essentials—increases the likelihood of indexing and improved visibility in search results.
+
+## How Search Engines Work
+
+Search engines operate through a structured pipeline consisting of crawling, indexing, and ranking. These stages allow search engines to discover content, understand it, and present relevant results to users.
+
+### Crawling
+
+Crawling is the process by which automated programs, known as crawlers or bots, discover content across the web. Google’s crawler is called Googlebot. Crawlers navigate the web by following links and identifying new URLs for processing.
+
+Pages are typically discovered through:
+
+- Internal and external hyperlinks  
+- XML sitemaps submitted by website owners  
+
+Crawling behavior depends on several technical factors, including server availability, website performance, HTTP response status codes, and directives specified in the `robots.txt` file. Search engines may also render pages to process dynamically generated content, including JavaScript-based elements. If critical resources such as CSS or JavaScript are blocked, search engines may not fully understand the page.
+
+### Indexing
+
+After a page is crawled, it undergoes indexing. During this stage, search engines analyze and store the page’s information within a structured database called the index.
+
+Indexing includes:
+
+- Extracting and analyzing textual content  
+- Evaluating metadata such as title tags and meta directives  
+- Processing images and embedded resources  
+- Selecting canonical URLs  
+- Clustering duplicate or substantially similar pages  
+
+Not all crawled pages are indexed. Indexing decisions are influenced by content quality, technical accessibility, canonicalization signals, and meta directives such as `noindex`. Pages with low-quality or redundant content may be excluded from the index.
+
+### Ranking and Serving
+
+When a user submits a search query, search engines retrieve relevant indexed documents and rank them according to multiple signals. The ranking process evaluates which pages best satisfy the intent behind the query.
+
+Ranking signals may include:
+
+- Relevance to the search query  
+- Language compatibility  
+- Geographic location  
+- Device type (desktop or mobile)  
+- Usability and page experience factors  
+
+Search results may vary between users due to contextual signals such as location or device. The final output presented to users is referred to as serving search results.
+
+## Helping Search Engines Discover Content
+
+Efficient discovery improves the likelihood of crawling and indexing. Websites can support search engine discovery by maintaining strong internal linking structures and ensuring that important pages are accessible through static links.
+
+Discovery is supported by:
+
+- Clear internal linking between related pages  
+- External backlinks from other websites  
+- Submission of XML sitemaps  
+
+The `site:` search operator can be used to check whether pages are indexed. Search Console provides tools for monitoring crawl behavior, indexing coverage, and technical issues.
+
+
+## Site Organization and Architecture
+
+A well-structured website improves both usability and crawl efficiency. Logical organization allows search engines to better understand relationships between pages and prioritize crawling behavior.
+
+### Logical Structure
+
+Content should be organized hierarchically, grouping related topics into meaningful categories. Clear navigation and categorization improve accessibility for both users and search engines.
+
+### Descriptive URLs
+
+URLs should be human-readable and descriptive of page content. Clean URLs improve usability and may provide contextual clues about page hierarchy.
+
+Avoid:
+
+- Random or meaningless identifiers  
+- Excessive parameters  
+- Non-descriptive URL structures  
+
+Breadcrumb navigation can enhance structural clarity. Structured data may optionally be used to reinforce site hierarchy.
+
+### Directory Structure
+
+Grouping related pages within consistent directory paths helps search engines interpret content relationships. Logical directory organization may influence crawl frequency patterns, particularly for large websites.
+
+### Duplicate Content and Canonicalization
+
+Duplicate content occurs when multiple URLs serve substantially similar or identical content. While duplicate content is not necessarily penalized, it can dilute indexing signals and reduce crawl efficiency.
+
+Duplicate management strategies include:
+
+- Defining a canonical URL  
+- Implementing `rel="canonical"` tags  
+- Applying permanent (301) redirects where appropriate  
+
+Each unique content piece should ideally have a single preferred URL to consolidate ranking and indexing signals.
+
+## Content Quality Principles
+
+Content quality plays a critical role in indexing and ranking decisions. Search engines aim to surface content that satisfies user intent and provides meaningful value.
+
+High-quality content is generally:
+
+- Helpful and user-focused  
+- Original and unique  
+- Accurate and up to date  
+- Clearly structured with headings  
+- Easy to read and understand  
+
+Practices to avoid include keyword stuffing, artificial content inflation, and reliance on outdated tactics such as meta keywords, which are ignored by modern search engines.
+
+There is no fixed optimal word count for ranking purposes. Experience, Expertise, Authoritativeness, and Trustworthiness (E-E-A-T) are evaluation concepts used to assess content quality; however, they are not direct ranking factors.
+
+## Search Appearance Optimization
+
+Search appearance influences whether users click on a result. While ranking determines visibility, presentation affects click-through behavior.
+
+### Title Links
+
+The `<title>` element is a primary source for search result titles. Well-written titles improve clarity and relevance.
+
+Effective title characteristics include:
+
+- Uniqueness per page  
+- Clear and descriptive wording  
+- Conciseness  
+- Accurate representation of page content  
+
+### Meta Description and Snippets
+
+Search snippets are typically generated from on-page content. The meta description tag may influence snippet generation but does not directly impact rankings.
+
+Effective meta descriptions:
+
+- Summarize the page accurately  
+- Highlight key information  
+- Remain concise and relevant  
+
+Clear snippet text improves user understanding and click-through likelihood.
+
+## Image Optimization
+
+Images contribute to both usability and discoverability in search results. Search engines analyze images in the context of surrounding text.
+
+Best practices for image optimization include:
+
+- Using high-quality, relevant images  
+- Placing images near related textual content  
+- Providing descriptive `alt` attributes  
+
+Alt text improves accessibility and helps search engines understand visual content within its contextual meaning.

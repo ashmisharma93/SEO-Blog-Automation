@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+streamlit
+python-dotenv
+sqlalchemy
+langchain
+langchain-community
+chromadb
+sentence-transformers
+google-genai
+textstat
+scipy
+plotly
