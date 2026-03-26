@@ -1,52 +1,84 @@
-# Environment & secrets
-.env
-.env.*
-
-# Database (don't push your local DB)
-*.db
-*.sqlite
-*.sqlite3
-data/seo_blog.db
-
-# Vector store (large binary files, regenerate with ingest_all.py)
-data/vector_store/
-chroma_db/
-
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.Python
+*$py.class
+*.so
+*.egg
 *.egg-info/
 dist/
 build/
 .eggs/
+*.pyo
 
-# Virtual environment
+# ── Virtual Environments ──────────────────────────────────────────────────────
 venv/
-.venv/
 env/
-ENV/
+.env
+.venv
+seo_blog_env/
 
-# IDE
+# ── Environment Variables (NEVER commit API keys) ─────────────────────────────
+.env
+.env.local
+.env.production
+*.env
+
+# ── Database (contains experiment data — keep local) ─────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+data/seo_blog.db
+backend/seo_blog.db
+seo_blog.db
+
+# ── ChromaDB Vector Store (large binary files) ────────────────────────────────
+data/vector_store/
+chroma_db/
+*.chroma
+
+# ── Streamlit Cache ───────────────────────────────────────────────────────────
+.streamlit/
+__streamlit_cache__/
+
+# ── IDE and Editor Files ──────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# OS
+*~
 .DS_Store
 Thumbs.db
 
-# Logs
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
 logs/
+uvicorn.log
 
-# Streamlit cache
-.streamlit/
+# ── Test and Demo Scripts (internal use only) ─────────────────────────────────
+scripts/cleanup_experiments.py
+scripts/restore_negatives.py
+scripts/demo_data_seeder.py
 
-# Pytest
-.pytest_cache/
-htmlcov/
-.coverage
+# ── Jupyter Notebooks (if any) ───────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ── Node (if any frontend build tools) ───────────────────────────────────────
+node_modules/
+npm-debug.log
+
+# ── Temporary Files ───────────────────────────────────────────────────────────
+*.tmp
+*.temp
+temp/
+tmp/
+raw_data/
