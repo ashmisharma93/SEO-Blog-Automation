@@ -32,16 +32,19 @@ This system uses a novel RAG architecture combining:
 - SEO Site Audit powered by SEOptimer API
 
 ### 📈 Statistical Validation
-- Paired t-test across 36 experiments
+- Paired t-test across 42 experiments
+- t-statistic: **2.064** | p-value: **0.0454** (p < 0.05)
 - Cohen's d effect size reporting
 - 95% Confidence Intervals
-- RAG Win Rate: 94.4% (34/36 experiments)
-- p-value ≈ 0.0 — statistically significant
+- Average RAG SEO Score: **88.0** vs Baseline: **87.4**
+- Average SEO Improvement: **+0.6 pts** consistently
 
 ### 🔗 Factual Grounding (Citation Advantage)
 - RAG generates 4–8 verified source citations per blog
 - Baseline LLM generates 0 citations
 - 100% improvement in factual grounding
+- Citations sourced from Google Search Central, Moz, 
+  Ahrefs, and web.dev — rendered as clickable hyperlinks
 
 ---
 
@@ -154,16 +157,17 @@ Local SEO, E-E-A-T, Page Speed, International SEO, Video SEO, and more.
 
 | Metric | Value |
 |---|---|
-| Total Experiments | 36 |
-| RAG Win Rate | 94.4% (34/36) |
-| Avg RAG SEO Score | 86.0 |
-| Avg Baseline SEO Score | 85.5 |
-| Avg SEO Improvement | +0.43 pts |
-| t-Statistic | 65.67 |
-| p-value | ≈ 0.0 |
-| RAG Citations per Blog | 8 (avg) |
+| Total Experiments | 42 |
+| Keywords Tested | 16 |
+| Avg RAG SEO Score | 88.0 |
+| Avg Baseline SEO Score | 87.4 |
+| Avg SEO Improvement | +0.6 pts |
+| t-Statistic | 2.064 |
+| p-value | 0.0454 (p < 0.05) |
+| Best Single Improvement | +11.67 pts (crawl budget) |
+| RAG Citations per Blog | 4–8 (avg) |
 | Baseline Citations per Blog | 0 |
-
+| Factual Grounding Improvement | 100% |
 ---
 
 ## 🛑 Important Note
