@@ -8,142 +8,184 @@ from datetime import datetime
 import urllib.parse
 import hashlib
 
+# Load .env file so HF_API_KEY and other keys are available in Streamlit
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
 if "selected_blog" not in st.session_state:
     st.session_state.selected_blog = None
 
-# ── Contextual Section Banner Generator ──────────────────────────────────────
-# Generates professional Plotly banners — no external API, always works,
-# contextually relevant to each blog section topic
-
+# ── Topic-aware Plotly banner config ─────────────────────────────────────────
 TOPIC_CONFIGS = {
-    # keyword fragment → (accent_color, bg_color, icon, subtitle)
-    "technical":    ("#00d4ff", "#0a1a2a", "⚙️", "Technical Optimization"),
-    "on-page":      ("#a855f7", "#1a0a2a", "📄", "On-Page SEO"),
-    "on page":      ("#a855f7", "#1a0a2a", "📄", "On-Page SEO"),
-    "link build":   ("#f0c040", "#2a1a0a", "🔗", "Link Building"),
-    "backlink":     ("#f0c040", "#2a1a0a", "🔗", "Authority & Backlinks"),
-    "keyword":      ("#00e5a0", "#0a2a1a", "🔍", "Keyword Research"),
-    "content":      ("#38bdf8", "#0a1622", "✍️", "Content Strategy"),
-    "mobile":       ("#fb923c", "#2a1205", "📱", "Mobile Optimization"),
-    "speed":        ("#ff4d6d", "#2a0a10", "⚡", "Performance & Speed"),
-    "core web":     ("#34d399", "#051a10", "📊", "Core Web Vitals"),
-    "schema":       ("#818cf8", "#0a0a2a", "🏷️", "Structured Data"),
-    "voice":        ("#f472b6", "#2a0a1a", "🎙️", "Voice Search"),
-    "local":        ("#4ade80", "#051505", "📍", "Local SEO"),
-    "rank":         ("#facc15", "#1a1500", "🏆", "Ranking Factors"),
-    "crawl":        ("#60a5fa", "#050f1a", "🕷️", "Crawling & Indexing"),
-    "sitemap":      ("#a78bfa", "#0a0520", "🗺️", "XML Sitemap"),
-    "image seo":    ("#fb923c", "#200a00", "🖼️", "Image Optimization"),
-    "analytics":    ("#22d3ee", "#001a20", "📈", "SEO Analytics"),
-    "e-e-a-t":      ("#86efac", "#002010", "🎯", "E-E-A-T & Trust"),
-    "international":("#f9a8d4", "#200010", "🌐", "International SEO"),
-    "video":        ("#fca5a5", "#200005", "🎬", "Video SEO"),
-    "conclusion":   ("#6b7fa3", "#0a0e1a", "✅", "Summary & Next Steps"),
-    "introduction": ("#00d4ff", "#0a1a2a", "📖", "Introduction"),
-    "default":      ("#00d4ff", "#0a1629", "🚀", "SEO Best Practices"),
+    "technical":     {"color": "#00d4ff", "bg": "#0a1628", "icon": "⚙️"},
+    "on page":       {"color": "#a855f7", "bg": "#130a28", "icon": "📝"},
+    "on-page":       {"color": "#a855f7", "bg": "#130a28", "icon": "📝"},
+    "link":          {"color": "#00e5a0", "bg": "#0a2818", "icon": "🔗"},
+    "keyword":       {"color": "#f0c040", "bg": "#1a1500", "icon": "🔍"},
+    "content":       {"color": "#ff7f50", "bg": "#1a0f0a", "icon": "✍️"},
+    "mobile":        {"color": "#00bfff", "bg": "#001a2e", "icon": "📱"},
+    "local":         {"color": "#00e5a0", "bg": "#001a12", "icon": "📍"},
+    "voice":         {"color": "#a855f7", "bg": "#130a28", "icon": "🎙️"},
+    "video":         {"color": "#ff4d6d", "bg": "#200010", "icon": "🎥"},
+    "page speed":    {"color": "#f0c040", "bg": "#1a1000", "icon": "⚡"},
+    "speed":         {"color": "#f0c040", "bg": "#1a1000", "icon": "⚡"},
+    "core web":      {"color": "#00e5a0", "bg": "#001a12", "icon": "📊"},
+    "schema":        {"color": "#00d4ff", "bg": "#001828", "icon": "🧩"},
+    "crawl":         {"color": "#ff7f50", "bg": "#1a0800", "icon": "🕷️"},
+    "image seo":     {"color": "#a855f7", "bg": "#130a28", "icon": "🖼️"},
+    "international": {"color": "#00bfff", "bg": "#001428", "icon": "🌍"},
+    "e-e-a-t":       {"color": "#f0c040", "bg": "#1a1000", "icon": "🏆"},
+    "analytics":     {"color": "#00e5a0", "bg": "#001a12", "icon": "📈"},
+    "sitemap":       {"color": "#00d4ff", "bg": "#001828", "icon": "🗺️"},
+    "xml":           {"color": "#00d4ff", "bg": "#001828", "icon": "🗺️"},
+    "internal":      {"color": "#a855f7", "bg": "#130a28", "icon": "🔀"},
+    "meta":          {"color": "#ff7f50", "bg": "#1a0800", "icon": "🏷️"},
+    "structured":    {"color": "#00bfff", "bg": "#001428", "icon": "🧱"},
+    "domain":        {"color": "#f0c040", "bg": "#1a1000", "icon": "🌐"},
 }
 
-def get_topic_config(text: str):
-    t = text.lower()
+def _get_topic_config(text: str) -> dict:
+    text_lower = text.lower()
     for key, cfg in TOPIC_CONFIGS.items():
-        if key in t:
+        if key in text_lower:
             return cfg
-    return TOPIC_CONFIGS["default"]
+    return {"color": "#00d4ff", "bg": "#0a1628", "icon": "📄"}
 
-def make_section_banner(heading_text: str, keyword: str = "") -> go.Figure:
-    """
-    Generate a contextual Plotly banner for a blog section.
-    Color and icon adapt to the topic automatically.
-    Never fails — no external API needed.
-    """
-    accent, bg, icon, subtitle = get_topic_config(heading_text + " " + keyword)
-    words = heading_text.split()
-    short = " ".join(words[:7]) + ("…" if len(words) > 7 else "")
-
+def make_header_banner(title: str, keyword: str, seo_score=None):
+    """Large header banner for the blog title. No external API needed."""
+    cfg = _get_topic_config(keyword)
+    score_text = f"  ·  SEO: {seo_score:.1f}/100" if seo_score else ""
     fig = go.Figure()
-
-    # Background rectangle with accent border
+    # Background
     fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1,
-                  xref="paper", yref="paper",
-                  fillcolor=bg, line=dict(color=accent, width=2))
-
-    # Decorative left accent bar
-    fig.add_shape(type="rect", x0=0, y0=0, x1=0.004, y1=1,
-                  xref="paper", yref="paper",
-                  fillcolor=accent, line=dict(width=0))
-
-    # Icon
-    fig.add_annotation(text=icon, x=0.04, y=0.55, xref="paper", yref="paper",
-                        showarrow=False, font=dict(size=28))
-
-    # Main heading text
-    fig.add_annotation(text=f"<b>{short}</b>",
-                        x=0.08, y=0.65, xref="paper", yref="paper",
-                        xanchor="left", showarrow=False,
-                        font=dict(size=18, color=accent, family="DM Sans"))
-
+                  fillcolor=cfg["bg"], line_width=0, layer="below")
+    # Left accent bar
+    fig.add_shape(type="rect", x0=0, y0=0, x1=0.006, y1=1,
+                  fillcolor=cfg["color"], line_width=0)
+    # Bottom accent line — use opacity parameter, not 8-digit hex
+    fig.add_shape(type="line", x0=0, y0=0.02, x1=1, y1=0.02,
+                  opacity=0.3, line=dict(color=cfg["color"], width=1))
+    # Icon + Title
+    fig.add_annotation(x=0.5, y=0.68,
+        text=f"<b>{cfg['icon']}  {title}</b>",
+        font=dict(size=22, color=cfg["color"], family="DM Sans, sans-serif"),
+        showarrow=False, xref="paper", yref="paper", xanchor="center")
     # Subtitle
-    fig.add_annotation(text=subtitle,
-                        x=0.08, y=0.28, xref="paper", yref="paper",
-                        xanchor="left", showarrow=False,
-                        font=dict(size=11, color="#6b7fa3", family="DM Sans"))
-
-    # Keyword tag top-right
-    if keyword:
-        fig.add_annotation(text=f"● {keyword.upper()}",
-                            x=0.98, y=0.55, xref="paper", yref="paper",
-                            xanchor="right", showarrow=False,
-                            font=dict(size=10, color=accent, family="Space Mono"))
-
+    fig.add_annotation(x=0.5, y=0.28,
+        text=f"Keyword: <b>{keyword.title()}</b>{score_text}",
+        font=dict(size=13, color="#8899bb", family="DM Sans, sans-serif"),
+        showarrow=False, xref="paper", yref="paper", xanchor="center")
     fig.update_layout(
-        paper_bgcolor=bg, plot_bgcolor=bg,
-        height=110, margin=dict(l=0, r=0, t=0, b=0),
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
-    )
+        height=130, margin=dict(l=0, r=0, t=0, b=0),
+        paper_bgcolor=cfg["bg"], plot_bgcolor=cfg["bg"],
+        xaxis=dict(visible=False, range=[0,1]),
+        yaxis=dict(visible=False, range=[0,1]))
     return fig
 
-def make_header_banner(title: str, keyword: str, seo_score: float = None) -> go.Figure:
-    """Large header banner for top of blog."""
-    accent, bg, icon, subtitle = get_topic_config(keyword)
-    words = title.split()
-    line1 = " ".join(words[:6])
-    line2 = " ".join(words[6:12]) if len(words) > 6 else ""
-
+def make_section_banner(heading_text: str, keyword: str):
+    """Compact section banner per H2 heading. No external API needed."""
+    cfg = _get_topic_config(heading_text + " " + keyword)
     fig = go.Figure()
+    # Background
     fig.add_shape(type="rect", x0=0, y0=0, x1=1, y1=1,
-                  xref="paper", yref="paper",
-                  fillcolor=bg, line=dict(color=accent, width=2))
-    fig.add_shape(type="rect", x0=0, y0=0, x1=0.005, y1=1,
-                  xref="paper", yref="paper", fillcolor=accent, line=dict(width=0))
-    fig.add_shape(type="line", x0=0.05, x1=0.95, y0=0.12, y1=0.12,
-                  xref="paper", yref="paper",
-                  line=dict(color=accent, width=1, dash="dot"))
-
-    fig.add_annotation(text=f"<b>{line1}</b>",
-                        x=0.5, y=0.78 if line2 else 0.65,
-                        xref="paper", yref="paper",
-                        showarrow=False, font=dict(size=22, color=accent, family="DM Sans"))
-    if line2:
-        fig.add_annotation(text=f"<b>{line2}</b>",
-                            x=0.5, y=0.55, xref="paper", yref="paper",
-                            showarrow=False, font=dict(size=22, color=accent, family="DM Sans"))
-
-    fig.add_annotation(text=f"{icon}  RAG-Powered · SEO Optimized · Knowledge-Grounded",
-                        x=0.5, y=0.22, xref="paper", yref="paper",
-                        showarrow=False, font=dict(size=11, color="#6b7fa3", family="Space Mono"))
-
-    if seo_score:
-        fig.add_annotation(text=f"SEO Score: {seo_score:.1f}/100",
-                            x=0.97, y=0.85, xref="paper", yref="paper",
-                            xanchor="right", showarrow=False,
-                            font=dict(size=12, color=accent, family="Space Mono"))
-
+                  fillcolor=cfg["bg"], line_width=0, layer="below")
+    # Left accent bar
+    fig.add_shape(type="rect", x0=0, y0=0, x1=0.008, y1=1,
+                  fillcolor=cfg["color"], line_width=0)
+    # Icon + heading text
+    fig.add_annotation(x=0.5, y=0.52,
+        text=f"<b>{cfg['icon']}  {heading_text}</b>",
+        font=dict(size=16, color=cfg["color"], family="DM Sans, sans-serif"),
+        showarrow=False, xref="paper", yref="paper", xanchor="center")
     fig.update_layout(
-        paper_bgcolor=bg, plot_bgcolor=bg,
-        height=180, margin=dict(l=0, r=0, t=0, b=0),
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
-    )
+        height=75, margin=dict(l=0, r=0, t=0, b=0),
+        paper_bgcolor=cfg["bg"], plot_bgcolor=cfg["bg"],
+        xaxis=dict(visible=False, range=[0,1]),
+        yaxis=dict(visible=False, range=[0,1]))
     return fig
+
+# ── HF Image Generation ──────────────────────────────────────────────────────
+import base64 as _b64, time as _time
+
+_IMAGE_CACHE = {}  # in-memory cache: cache_key -> base64 string
+
+def fetch_hf_image(keyword: str, section: str = "") -> str | None:
+    """
+    Call Hugging Face FLUX.1-schnell to generate a relevant blog image.
+    Returns base64 PNG data URI or None on failure.
+    Uses in-memory cache to avoid duplicate API calls.
+    """
+    hf_key = os.getenv("HF_API_KEY", "")
+    if not hf_key:
+        return None
+
+    # Build prompt
+    cache_key = hashlib.md5(f"{keyword}_{section}".encode()).hexdigest()[:12]
+    if cache_key in _IMAGE_CACHE:
+        return _IMAGE_CACHE[cache_key]
+
+    # Topic-specific prompts
+    templates = {
+        "technical seo":    "isometric illustration website crawling indexing search engine robots, dark blue cyan, professional digital art",
+        "on page seo":      "on-page SEO infographic title tags meta descriptions headings content, flat design illustration",
+        "on-page seo":      "on-page SEO infographic title tags meta descriptions headings content, flat design illustration",
+        "link building":    "network diagram website backlinks domain authority interconnected nodes, digital marketing illustration",
+        "keyword research": "keyword analysis search volume charts SEO mapping data visualization, professional infographic",
+        "content marketing":"content strategy blog writing social media digital marketing funnel, modern flat design",
+        "mobile seo":       "mobile phone SEO optimization responsive design search rankings smartphone, tech illustration",
+        "local seo":        "map pin local business search results Google Maps local SEO, flat design illustration",
+        "voice search seo": "smart speaker voice waves search results voice optimization, modern tech illustration",
+        "core web vitals":  "web performance metrics LCP FID CLS page speed dashboard, data visualization",
+        "page speed":       "website speed optimization loading performance metrics lightning bolt, tech art",
+        "schema markup":    "structured data JSON-LD schema diagram rich snippets search results, professional illustration",
+        "crawl budget":     "search engine spider bot navigating website crawl efficiency diagram, tech art",
+        "image seo":        "image optimization alt text compression visual search, professional infographic",
+        "video seo":        "video content YouTube SEO schema markup optimization, illustration",
+        "e-e-a-t":          "trust authority expertise SEO credibility diagram, professional illustration",
+        "internal linking": "website internal link structure diagram link equity site architecture, illustration",
+        "xml sitemap":      "XML sitemap structure website hierarchy search engine submission, tech illustration",
+        "international seo":"global SEO hreflang multilingual website world map, professional illustration",
+        "analytics":        "SEO analytics dashboard traffic graphs ranking charts Google Analytics, data viz",
+        "meta tags":        "HTML meta tags SEO metadata optimization title description tags, infographic",
+        "schema markup seo":"structured data schema.org JSON-LD rich results search visibility, professional illustration",
+    }
+    kw_lower = keyword.lower().strip()
+    prompt = next((v for k, v in templates.items() if k in kw_lower),
+                  f"professional digital marketing SEO illustration about {keyword}, "
+                  f"modern flat design dark blue cyan palette, high quality, no text")
+    if section:
+        prompt += f", featuring {section}"
+    prompt += ", 4k, no text overlay, clean background"
+
+    url = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
+    headers = {"Authorization": f"Bearer {hf_key}"}
+    payload = {"inputs": prompt, "parameters": {"width": 1024, "height": 512,
+                "num_inference_steps": 4, "guidance_scale": 0.0}}
+
+    for attempt in range(3):
+        try:
+            r = _req.post(url, headers=headers, json=payload, timeout=90)
+            if r.status_code == 200:
+                b64 = "data:image/png;base64," + _b64.b64encode(r.content).decode()
+                _IMAGE_CACHE[cache_key] = b64
+                return b64
+            elif r.status_code == 503:
+                _time.sleep(25 * (attempt + 1))
+            elif r.status_code == 429:
+                _time.sleep(35)
+            else:
+                print(f"HF error {r.status_code}: {r.text[:150]}")
+                return None
+        except Exception as e:
+            print(f"HF image error: {e}")
+            return None
+    return None
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -233,138 +275,110 @@ def render_citations(text: str) -> str:
 
 def markdown_to_html(text: str) -> str:
     """
-    Convert markdown blog content to styled HTML for proper rendering
-    with working hyperlinks. Handles ##, ###, bold, bullets.
+    Convert markdown blog content to styled HTML.
+    Handles ##, ###, bold, italic, bullets, numbered lists,
+    inline code (backticks), code blocks, horizontal rules.
     """
     import re
+
+    # Remove fenced code blocks entirely
+    text = re.sub(r"```[\w]*\n?[\s\S]*?```", "", text)
+
     lines = text.split("\n")
     html_lines = []
     in_ul = False
+    in_ol = False
+
+    def close_lists():
+        nonlocal in_ul, in_ol
+        if in_ul:
+            html_lines.append("</ul>")
+            in_ul = False
+        if in_ol:
+            html_lines.append("</ol>")
+            in_ol = False
+
+    def process_inline(s):
+        # Strip inline code backticks entirely — Gemini uses `<h1>` etc in blog content
+        # which causes broken rendering. Just remove the backtick wrapper.
+        s = re.sub(r"`([^`]+)`", r"\1", s)
+        # Strip any remaining raw HTML tags that Gemini sneaks in
+        s = re.sub(r"<(h[1-6]|br|hr|p|div|span)[^>]*>", "", s)
+        s = re.sub(r"</(h[1-6]|p|div|span)>", "", s)
+        # bold
+        s = re.sub(r"\*\*(.+?)\*\*", lambda m: "<strong style='color:#e8eef8;'>" + m.group(1) + "</strong>", s)
+        # italic
+        s = re.sub(r"\*(.+?)\*", lambda m: "<em>" + m.group(1) + "</em>", s)
+        return s
 
     for line in lines:
         stripped = line.strip()
 
-        # H2 heading
-        if stripped.startswith("## "):
+        if stripped == "#":
+            continue
+
+        if stripped in ("---", "***", "___"):
+            close_lists()
+            html_lines.append("<hr style='border-color:#1e2d50;margin:16px 0;'>")
+            continue
+
+        if stripped.startswith("### "):
+            close_lists()
+            t = process_inline(stripped[4:].strip())
+            html_lines.append("<h3 style='color:#00d4ff;font-size:16px;font-weight:600;"
+                              "margin-top:18px;margin-bottom:6px;font-family:DM Sans,sans-serif;'>"
+                              + t + "</h3>")
+
+        elif stripped.startswith("## "):
+            close_lists()
+            t = process_inline(stripped[3:].strip())
+            html_lines.append("<h2 style='color:#e8eef8;font-size:20px;font-weight:700;"
+                              "margin-top:28px;margin-bottom:8px;font-family:DM Sans,sans-serif;'>"
+                              + t + "</h2>")
+
+        elif stripped.startswith("# "):
+            close_lists()
+            t = process_inline(stripped[2:].strip())
+            html_lines.append("<h2 style='color:#e8eef8;font-size:22px;font-weight:700;"
+                              "margin-top:28px;margin-bottom:8px;font-family:DM Sans,sans-serif;'>"
+                              + t + "</h2>")
+
+        elif re.match(r"^\d+\.\s", stripped):
             if in_ul:
                 html_lines.append("</ul>")
                 in_ul = False
-            heading_text = stripped[3:].strip()
-            html_lines.append(
-                "<h2 style='color:#e8eef8; font-size:22px; font-weight:700; "
-                "margin-top:28px; margin-bottom:8px; font-family:DM Sans,sans-serif;'>"
-                + heading_text + "</h2>"
-            )
+            if not in_ol:
+                html_lines.append("<ol style='color:#e8eef8;font-size:14px;line-height:1.9;"
+                                  "margin-left:20px;margin-bottom:8px;'>")
+                in_ol = True
+            item = re.sub(r"^\d+\.\s", "", stripped)
+            html_lines.append("<li style='margin-bottom:4px;'>" + process_inline(item) + "</li>")
 
-        # H3 heading
-        elif stripped.startswith("### "):
-            if in_ul:
-                html_lines.append("</ul>")
-                in_ul = False
-            heading_text = stripped[4:].strip()
-            html_lines.append(
-                "<h3 style='color:#00d4ff; font-size:16px; font-weight:600; "
-                "margin-top:18px; margin-bottom:6px; font-family:DM Sans,sans-serif;'>"
-                + heading_text + "</h3>"
-            )
-
-        # Bullet point
         elif stripped.startswith("- ") or stripped.startswith("* "):
+            if in_ol:
+                html_lines.append("</ol>")
+                in_ol = False
             if not in_ul:
-                html_lines.append(
-                    "<ul style='color:#e8eef8; font-size:14px; line-height:1.9; "
-                    "margin-left:20px; margin-bottom:8px;'>"
-                )
+                html_lines.append("<ul style='color:#e8eef8;font-size:14px;line-height:1.9;"
+                                  "margin-left:20px;margin-bottom:8px;'>")
                 in_ul = True
             item = stripped[2:].strip()
-            # Handle **bold** in list items
-            item = re.sub(r"\*\*(.+?)\*\*", r"<strong></strong>", item)
-            html_lines.append("<li style='margin-bottom:4px;'>" + item + "</li>")
+            html_lines.append("<li style='margin-bottom:4px;'>" + process_inline(item) + "</li>")
 
-        # Empty line
         elif stripped == "":
-            if in_ul:
-                html_lines.append("</ul>")
-                in_ul = False
+            close_lists()
             html_lines.append("<br>")
 
-        # Regular paragraph
         else:
-            if in_ul:
-                html_lines.append("</ul>")
-                in_ul = False
-            # Handle **bold**
-            para = re.sub(r"\*\*(.+?)\*\*", r"<strong></strong>", stripped)
-            # Handle *italic*
-            para = re.sub(r"\*(.+?)\*", r"<em></em>", para)
-            html_lines.append(
-                "<p style='color:#e8eef8; font-size:14px; line-height:1.9; "
-                "margin-bottom:10px; font-family:DM Sans,sans-serif;'>"
-                + para + "</p>"
-            )
+            close_lists()
+            html_lines.append("<p style='color:#e8eef8;font-size:14px;line-height:1.9;"
+                              "margin-bottom:10px;font-family:DM Sans,sans-serif;'>"
+                              + process_inline(stripped) + "</p>")
 
-    if in_ul:
-        html_lines.append("</ul>")
-
+    close_lists()
     return "\n".join(html_lines)
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-
-.stApp { background: #0a0e1a; color: #e8eef8; }
-
-[data-testid="stSidebar"] { background: #0f1629 !important; border-right: 1px solid #1e2d50; }
-[data-testid="stSidebar"] * { color: #e8eef8 !important; }
-
-[data-testid="stMetric"] { background: #141c35; border: 1px solid #1e2d50; border-radius: 12px; padding: 16px 20px !important; transition: border-color 0.2s; }
-[data-testid="stMetric"]:hover { border-color: #00d4ff44; }
-[data-testid="stMetricLabel"] { color: #6b7fa3 !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-[data-testid="stMetricValue"] { color: #00d4ff !important; font-family: 'Space Mono', monospace !important; font-size: 26px !important; font-weight: 700 !important; }
-[data-testid="stMetricDelta"] { font-family: 'Space Mono', monospace !important; font-size: 12px !important; }
-
-.stButton > button { background: #00d4ff !important; color: #0a0e1a !important; border: none !important; border-radius: 8px !important; font-family: 'Space Mono', monospace !important; font-weight: 700 !important; font-size: 13px !important; letter-spacing: 0.5px !important; padding: 10px 24px !important; transition: all 0.2s !important; }
-.stButton > button:hover { background: #33ddff !important; transform: translateY(-1px); }
-
-.stTextInput > div > div > input, .stTextArea > div > div > textarea { background: #0f1629 !important; border: 1px solid #1e2d50 !important; border-radius: 8px !important; color: #e8eef8 !important; font-family: 'DM Sans', sans-serif !important; font-size: 14px !important; }
-.stTextInput > div > div > input:focus, .stTextArea > div > div > textarea:focus { border-color: #00d4ff !important; box-shadow: 0 0 0 1px #00d4ff44 !important; }
-
-.stSelectbox > div > div { background: #0f1629 !important; border: 1px solid #1e2d50 !important; border-radius: 8px !important; color: #e8eef8 !important; }
-
-[data-testid="stDataFrame"] { border: 1px solid #1e2d50; border-radius: 10px; overflow: hidden; }
-.stAlert { border-radius: 10px !important; border: none !important; }
-
-.stTabs [data-baseweb="tab-list"] { background: #0f1629; border-radius: 10px; padding: 4px; gap: 4px; border: 1px solid #1e2d50; }
-.stTabs [data-baseweb="tab"] { background: transparent !important; color: #6b7fa3 !important; border-radius: 8px !important; font-family: 'DM Sans', sans-serif !important; font-weight: 500 !important; font-size: 13px !important; padding: 8px 18px !important; }
-.stTabs [aria-selected="true"] { background: #00d4ff18 !important; color: #00d4ff !important; font-weight: 600 !important; }
-
-.streamlit-expanderHeader { background: #141c35 !important; border: 1px solid #1e2d50 !important; border-radius: 10px !important; color: #e8eef8 !important; font-weight: 600 !important; }
-
-hr { border-color: #1e2d50 !important; }
-
-.section-title { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: #00d4ff; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 0 12px 10px; border-left: 3px solid #00d4ff; margin-bottom: 16px; }
-
-.badge-green { background:#00e5a022; color:#00e5a0; border:1px solid #00e5a044; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:'Space Mono',monospace; }
-.badge-blue  { background:#00d4ff22; color:#00d4ff; border:1px solid #00d4ff44; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:'Space Mono',monospace; }
-.badge-gold  { background:#f0c04022; color:#f0c040; border:1px solid #f0c04044; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:'Space Mono',monospace; }
-.badge-red   { background:#ff4d6d22; color:#ff4d6d; border:1px solid #ff4d6d44; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:600; font-family:'Space Mono',monospace; }
-
-.stSpinner > div { border-top-color: #00d4ff !important; }
-
-.content-card { background: #141c35; border: 1px solid #1e2d50; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
-
-.image-container { border: 1px solid #1e2d50; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
-</style>
-""", unsafe_allow_html=True)
-
-
-# ── API Helpers ───────────────────────────────────────────────────────────────
 def api_get(path):
     try:
         r = requests.get(f"{API}{path}", timeout=30)
@@ -820,187 +834,111 @@ elif page == "🧪 Experiment Lab":
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "✍ Blog Generator":
 
-    import re as _re2
-
     st.markdown("<div class='section-title'>BLOG GENERATOR</div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#6b7fa3;font-size:14px;margin-bottom:20px;'>Generate SEO-optimized blogs grounded in your RAG knowledge base. Each blog includes AI-generated section visuals and clickable source citations.</p>", unsafe_allow_html=True)
 
-    # ═══════════════════════════════════════════════════════════
-    # BLOG VIEW MODE — full blog reading experience
-    # ═══════════════════════════════════════════════════════════
+    # ================= BLOG VIEW MODE =================
     if st.session_state.selected_blog:
-        blog    = st.session_state.selected_blog
+
+        blog = st.session_state.selected_blog
         keyword = blog.get("keyword", "")
-        bcont   = blog.get("content", "")
-        seo_val = blog.get("seo_score", 0) or 0
 
-        # Top bar
-        col_back, col_title = st.columns([1, 6])
-        with col_back:
-            if st.button("⬅ Back", key="back_top"):
-                st.session_state.selected_blog = None
-                st.rerun()
-        with col_title:
-            st.markdown(f"<h2 style='color:#e8eef8;margin:0;'>{blog['title']}</h2>", unsafe_allow_html=True)
+        st.markdown(f"# {blog['title']}")
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("SEO", blog.get("seo_score", 0))
+        c2.metric("Readability", blog.get("readability_score", 0))
+        c3.metric("Words", blog.get("word_count", 0))
 
-        # Metrics row
-        m1,m2,m3,m4 = st.columns(4)
-        with m1: st.metric("SEO Score", f"{seo_val:.1f}/100")
-        with m2: st.metric("Readability", f"{blog.get('readability_score',0):.1f}" if blog.get('readability_score') else "—")
-        with m3:
-            kd = blog.get("keyword_density")
-            st.metric("Keyword Density", f"{kd:.2f}%" if kd else "—")
-        with m4: st.metric("Word Count", blog.get("word_count","—"))
+        st.markdown("---")
 
-        # SEO Gauge
-        fig_g = go.Figure(go.Indicator(
-            mode="gauge+number", value=seo_val,
-            domain={"x":[0,1],"y":[0,1]},
-            gauge={"axis":{"range":[0,100],"tickcolor":C_MUTED},"bar":{"color":C_ACCENT},
-                   "bgcolor":"#141c35","bordercolor":"#1e2d50",
-                   "steps":[{"range":[0,40],"color":"#1a0a0e"},{"range":[40,70],"color":"#1a1508"},{"range":[70,100],"color":"#0a1a12"}],
-                   "threshold":{"line":{"color":C_GREEN,"width":3},"value":70}},
-            number={"font":{"color":C_ACCENT,"family":"Space Mono"}}
-        ))
-        fig_g.update_layout(paper_bgcolor="#0a0e1a",font=dict(color=C_MUTED),height=180,margin=dict(l=20,r=20,t=10,b=10))
-        st.plotly_chart(fig_g, use_container_width=True)
+        # Header Image — try HF AI image first, fall back to Plotly banner
+        with st.spinner("🎨 Generating header image..."):
+            header_img = fetch_hf_image(keyword)
+        if header_img:
+            st.markdown(
+                f"<img src='{header_img}' style='width:100%;border-radius:12px;"
+                f"margin:12px 0;box-shadow:0 4px 20px #00000066;'>",
+                unsafe_allow_html=True)
+        else:
+            st.plotly_chart(make_header_banner(blog["title"], keyword, blog.get("seo_score")), use_container_width=True)
 
-        st.markdown("<div class='section-title'>GENERATED CONTENT</div>", unsafe_allow_html=True)
+        st.markdown("---")
 
-        # Header banner — contextual, always works
-        st.plotly_chart(make_header_banner(blog["title"], keyword, seo_val), use_container_width=True)
+        import re
+        content = blog.get("content", "")
+        parts = re.split(r'(## .+)', content)
 
-        # Split on H2 and render each section with a contextual banner
-        h2p = _re2.compile(r'(^## .+$)', _re2.MULTILINE)
-        parts = h2p.split(bcont)
-
+        # Intro
         if parts:
             st.markdown(render_citations(markdown_to_html(parts[0])), unsafe_allow_html=True)
 
-        i = 1
-        while i < len(parts):
+        # Sections
+        for i in range(1, len(parts), 2):
             heading = parts[i]
-            body    = parts[i+1] if i+1 < len(parts) else ""
-            htxt    = heading.replace("##","").strip()
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.plotly_chart(make_section_banner(htxt, keyword), use_container_width=True)
-            st.markdown(render_citations(markdown_to_html(heading)), unsafe_allow_html=True)
+            body = parts[i+1] if i+1 < len(parts) else ""
+
+            heading_text = heading.replace("##", "").strip()
+
+            # Section image — try HF, fall back to Plotly banner
+            with st.spinner(f"🎨 Generating image for: {heading_text[:40]}..."):
+                section_img = fetch_hf_image(keyword, heading_text)
+            if section_img:
+                st.markdown(
+                    f"<img src='{section_img}' style='width:100%;border-radius:8px;"
+                    f"margin:8px 0 4px 0;box-shadow:0 2px 12px #00000055;'>",
+                    unsafe_allow_html=True)
+            else:
+                st.plotly_chart(make_section_banner(heading_text, keyword), use_container_width=True)
+
+            st.markdown(f"### {heading_text}")
             st.markdown(render_citations(markdown_to_html(body)), unsafe_allow_html=True)
-            i += 2
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("⬅ Back to Blog List", key="back_bottom"):
+        st.markdown("---")
+
+        if st.button("⬅ Back to Generator"):
             st.session_state.selected_blog = None
-            st.rerun()
 
-    # ═══════════════════════════════════════════════════════════
-    # GENERATOR MODE
-    # ═══════════════════════════════════════════════════════════
+    # ================= GENERATOR MODE =================
     else:
+
         col1, col2 = st.columns([1.8, 1.2])
 
         with col1:
-            with st.container():
-                title   = st.text_input("Blog Title", placeholder="e.g. Complete Guide to Technical SEO in 2026")
-                keyword = st.text_input("Target Keyword", placeholder="e.g. technical seo")
-                gen_btn = st.button("✦ Generate Blog", use_container_width=True)
+            title = st.text_input("Blog Title")
+            keyword = st.text_input("Target Keyword")
 
-            if gen_btn:
-                if not title.strip() or not keyword.strip():
-                    st.warning("Please fill in both fields.")
+            if st.button("Generate Blog"):
+                if not title or not keyword:
+                    st.warning("Fill both fields")
                 else:
-                    with st.spinner("RAG is retrieving context and generating your blog… (~30–60 seconds)"):
+                    with st.spinner("Generating..."):
                         data, err = api_post("/blogs/", json={"title": title, "keyword": keyword})
 
-                    if err or not data:
-                        st.error(f"Error: {err or 'Generation failed'}")
+                    if err:
+                        st.error(err)
                     else:
-                        st.success("✅ Blog generated and saved!")
-                        blog = data
-                        seo_val = blog.get("seo_score", 0) or 0
+                        st.success("Blog Generated!")
 
-                        # Metrics
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        st.markdown("<div class='section-title'>SEO METRICS</div>", unsafe_allow_html=True)
-                        m1,m2,m3,m4 = st.columns(4)
-                        with m1: st.metric("SEO Score", f"{seo_val:.1f}/100")
-                        with m2: st.metric("Readability", f"{blog.get('readability_score',0):.1f}" if blog.get('readability_score') else "—")
-                        with m3:
-                            kd = blog.get("keyword_density")
-                            st.metric("Keyword Density", f"{kd:.2f}%" if kd else "—")
-                        with m4: st.metric("Word Count", blog.get("word_count","—"))
-
-                        # Gauge
-                        fig_g2 = go.Figure(go.Indicator(
-                            mode="gauge+number", value=seo_val,
-                            domain={"x":[0,1],"y":[0,1]},
-                            gauge={"axis":{"range":[0,100],"tickcolor":C_MUTED},"bar":{"color":C_ACCENT},
-                                   "bgcolor":"#141c35","bordercolor":"#1e2d50",
-                                   "steps":[{"range":[0,40],"color":"#1a0a0e"},{"range":[40,70],"color":"#1a1508"},{"range":[70,100],"color":"#0a1a12"}],
-                                   "threshold":{"line":{"color":C_GREEN,"width":3},"value":70}},
-                            number={"font":{"color":C_ACCENT,"family":"Space Mono"}}
-                        ))
-                        fig_g2.update_layout(paper_bgcolor="#0a0e1a",font=dict(color=C_MUTED),height=180,margin=dict(l=20,r=20,t=10,b=10))
-                        st.plotly_chart(fig_g2, use_container_width=True)
-
-                        # Full blog inline
-                        st.markdown("<div class='section-title'>GENERATED CONTENT</div>", unsafe_allow_html=True)
-                        st.plotly_chart(make_header_banner(title, keyword, seo_val), use_container_width=True)
-
-                        bcont2 = blog.get("content","")
-                        h2p2 = _re2.compile(r'(^## .+$)', _re2.MULTILINE)
-                        parts2 = h2p2.split(bcont2)
-
-                        if parts2:
-                            st.markdown(render_citations(markdown_to_html(parts2[0])), unsafe_allow_html=True)
-                        i = 1
-                        while i < len(parts2):
-                            h = parts2[i]; b2 = parts2[i+1] if i+1 < len(parts2) else ""
-                            ht = h.replace("##","").strip()
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            st.plotly_chart(make_section_banner(ht, keyword), use_container_width=True)
-                            st.markdown(render_citations(markdown_to_html(h)), unsafe_allow_html=True)
-                            st.markdown(render_citations(markdown_to_html(b2)), unsafe_allow_html=True)
-                            i += 2
-
-        # ── Blog History (refined UI) ──────────────────────────────────────
+        # ================= BLOG HISTORY =================
         with col2:
-            st.markdown("<div class='section-title'>BLOG HISTORY</div>", unsafe_allow_html=True)
-            blogs, berr = api_get("/blogs/")
+            st.markdown("### Blog History")
 
-            if berr or not blogs:
-                st.info("No blogs generated yet.")
-            else:
+            blogs, err = api_get("/blogs/")
+
+            if blogs:
                 for b in reversed(blogs):
-                    seo     = b.get("seo_score", 0) or 0
-                    seo_col = C_GREEN if seo >= 80 else (C_GOLD if seo >= 60 else C_RED)
-                    icon    = "📗" if seo >= 80 else ("📙" if seo >= 60 else "📕")
-                    kw      = b.get("keyword","")
-                    wc      = b.get("word_count", 0)
 
-                    # Styled card
-                    st.markdown(f"""
-                    <div style='background:#141c35; border:1px solid #1e2d5099;
-                                border-left: 3px solid {seo_col};
-                                border-radius:10px; padding:14px 16px; margin-bottom:10px;'>
-                        <div style='font-size:13px; font-weight:600; color:#e8eef8;
-                                    margin-bottom:6px; line-height:1.4;'>
-                            {icon} {b["title"][:55]}{"…" if len(b["title"])>55 else ""}
-                        </div>
-                        <div style='display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px;'>
-                            <span style='font-size:11px; color:#6b7fa3;'>🔑 <span style='color:#00d4ff;'>{kw}</span></span>
-                            <span style='font-family:Space Mono,monospace; font-size:11px; color:{seo_col}; font-weight:700;'>SEO {seo:.1f}</span>
-                            <span style='font-size:11px; color:#6b7fa3;'>📝 {wc} words</span>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    with st.container():
+                        st.markdown(f"**{b['title']}**")
+                        st.caption(f"{b.get('keyword')} | SEO: {b.get('seo_score',0)}")
 
-                    if st.button("📖 Read Full Blog", key=f"vb_{b['id']}"):
-                        st.session_state.selected_blog = b
-                        st.rerun()
-                    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+                        if st.button("View Blog", key=b["id"]):
+                            st.session_state.selected_blog = b
+                            st.rerun()
+
+                        st.markdown("---")
+            else:
+                st.info("No blogs yet")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: ALL RECORDS
@@ -1050,7 +988,7 @@ elif page == "📋 All Records":
             "chunks_retrieved": "Chunks", "created_at": "Date"
         })
 
-        display_df["Date"] = pd.to_datetime(display_df["Date"]).dt.strftime("%b %d, %Y")
+        display_df["Date"] = pd.to_datetime(display_df["Date"], format="mixed").dt.strftime("%b %d, %Y")
 
         def color_delta(val):
             if isinstance(val, float):
@@ -1098,20 +1036,23 @@ elif page == "🔍 RAG Explainability":
 
     if retrieve_btn and exp_keyword.strip():
         with st.spinner("Querying ChromaDB vector store..."):
-            import sys, os
-            # Support both old and new folder structures
+            import sys, os, chromadb
             _base = os.path.dirname(os.path.abspath(__file__))
-            for _candidate in [
-                os.path.join(_base, "backend"),           # root/backend (old)
-                os.path.join(_base, "..", "backend"),     # frontend/../backend (new)
-                os.path.join(_base, "../backend"),
-            ]:
-                if os.path.isdir(_candidate):
-                    sys.path.insert(0, _candidate)
-                    break
+            _root = os.path.dirname(_base)  # project root
+            # Add project root to sys.path so backend.app.xxx imports work
+            if _root not in sys.path:
+                sys.path.insert(0, _root)
+            # Find ChromaDB path
+            _chroma_candidates = [
+                os.path.join(_root, "data", "vector_store"),
+                os.path.join(_root, "chroma_db"),
+            ]
+            _chroma_path = next((p for p in _chroma_candidates if os.path.isdir(p)), None)
             try:
-                from app.services.rag_service import retrieve_relevant_chunks, expand_query
-                from app.services.vector_store import collection
+                from backend.app.services.rag_service import retrieve_relevant_chunks, expand_query
+                if _chroma_path:
+                    _cc = chromadb.PersistentClient(path=_chroma_path)
+                    collection = _cc.get_collection(name="seo_knowledge_base")
 
                 # Show query expansion
                 expansions = expand_query(exp_keyword.strip())
