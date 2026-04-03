@@ -8,7 +8,7 @@ from datetime import datetime
 import urllib.parse
 import hashlib
 
-# Load .env file so HF_API_KEY and other keys are available in Streamlit
+# Load .env file 
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -1457,7 +1457,7 @@ elif page == "🌐 SEO Site Audit":
                         </div>
                         """, unsafe_allow_html=True)
 
-            # How it connects to your project
+            
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("<div class='section-title'>HOW THIS CONNECTS TO YOUR PROJECT</div>", unsafe_allow_html=True)
             st.markdown(f"""
