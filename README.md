@@ -29,7 +29,7 @@ This system uses a novel RAG architecture combining:
 - All Records with CSV export for thesis analysis
 - RAG Explainability Panel showing query expansions and retrieved chunks
 - Knowledge Base Explorer with chunk distribution charts
-- SEO Site Audit powered by SEOptimer API
+- SEO Site Audit powered by Google PageSpeed Insights
 
 ### 📈 Statistical Validation
 - Paired t-test across 42 experiments
