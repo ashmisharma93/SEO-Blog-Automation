@@ -407,6 +407,57 @@ def api_post(path, params=None, json=None):
 
 
 # ── Plotly Theme ──────────────────────────────────────────────────────────────
+def get_plot_layout():
+    """Returns Plotly layout — dark for dashboard, white for paper screenshots."""
+    paper_mode = st.session_state.get("paper_mode", False)
+    if paper_mode:
+        return dict(
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#f8f9fa",
+            font=dict(family="Arial", color="#222222", size=12),
+            margin=dict(l=10, r=10, t=40, b=10),
+            legend=dict(bgcolor="#ffffff", bordercolor="#cccccc", borderwidth=1,
+                       font=dict(color="#222222", size=12)),
+            xaxis=dict(gridcolor="#dddddd", linecolor="#aaaaaa",
+                      tickfont=dict(color="#333333")),
+            yaxis=dict(gridcolor="#dddddd", linecolor="#aaaaaa",
+                      tickfont=dict(color="#333333")),
+        )
+    return dict(
+        paper_bgcolor="#0a0e1a",
+        plot_bgcolor="#0f1629",
+        font=dict(family="DM Sans", color="#6b7fa3", size=12),
+        margin=dict(l=10, r=10, t=30, b=10),
+        legend=dict(bgcolor="#141c35", bordercolor="#1e2d50", borderwidth=1,
+                   font=dict(color="#e8eef8", size=12)),
+        xaxis=dict(gridcolor="#1e2d50", linecolor="#1e2d50",
+                  tickfont=dict(color="#6b7fa3")),
+        yaxis=dict(gridcolor="#1e2d50", linecolor="#1e2d50",
+                  tickfont=dict(color="#6b7fa3")),
+    )
+
+def get_colors():
+    """Returns chart colors — vivid for dark mode, paper-friendly for white mode."""
+    paper_mode = st.session_state.get("paper_mode", False)
+    if paper_mode:
+        return {
+            "accent": "#1a7abf",   # blue
+            "purple": "#7b2fa8",   # purple
+            "green":  "#1a8a5a",   # green
+            "gold":   "#b8860b",   # dark gold
+            "red":    "#c0392b",   # red
+            "muted":  "#555555",   # gray
+        }
+    return {
+        "accent": "#00d4ff",
+        "purple": "#a855f7",
+        "green":  "#00e5a0",
+        "gold":   "#f0c040",
+        "red":    "#ff4d6d",
+        "muted":  "#6b7fa3",
+    }
+
+# Dynamic layout — use get_plot_layout() instead of PLOT_LAYOUT directly
 PLOT_LAYOUT = dict(
     paper_bgcolor="#0a0e1a",
     plot_bgcolor="#0f1629",
@@ -463,6 +514,13 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
         st.markdown("<div style='font-size:11px; color:#6b7fa3; margin-top:8px; padding:0 4px;'>Run: <code>uvicorn main:app --reload</code></div>", unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Paper Mode toggle
+    paper_mode = st.toggle("📄 Paper Mode (White Charts)", value=False, key="paper_mode")
+    if paper_mode:
+        pass
 
     st.markdown("---")
     st.markdown("<div style='font-size:11px; color:#6b7fa3; text-align:center;'>Graduation Project · 2026</div>", unsafe_allow_html=True)
@@ -529,13 +587,13 @@ if page == "📊 Overview":
             fig = go.Figure()
             fig.add_trace(go.Bar(
                 name="Baseline", x=df_best["keyword"], y=df_best["baseline_seo"],
-                marker_color=C_PURPLE, marker_line_width=0
+                marker_color=get_colors()["purple"], marker_line_width=0
             ))
             fig.add_trace(go.Bar(
                 name="RAG", x=df_best["keyword"], y=df_best["rag_seo"],
-                marker_color=C_ACCENT, marker_line_width=0
+                marker_color=get_colors()["accent"], marker_line_width=0
             ))
-            fig.update_layout(**PLOT_LAYOUT, barmode="group", height=320, xaxis_tickangle=-35)
+            fig.update_layout(**get_plot_layout(), barmode="group", height=320, xaxis_tickangle=-35)
             st.plotly_chart(fig, use_container_width=True)
 
         with col2:
@@ -554,22 +612,22 @@ if page == "📊 Overview":
                 name="Baseline Citations",
                 x=df_best["keyword"],
                 y=[avg_base_cit] * n_kw,
-                marker_color=C_RED, marker_line_width=0,
+                marker_color=get_colors()["red"], marker_line_width=0,
                 text=["0"] * n_kw, textposition="outside",
-                textfont=dict(color=C_RED, size=10)
+                textfont=dict(color=get_colors()["red"], size=10)
             ))
             fig_cit.add_trace(go.Bar(
                 name="RAG Citations (avg)",
                 x=df_best["keyword"],
                 y=df_best["seo_improvement"].apply(lambda x: max(4, min(8, round(4 + (x + 0.5) * 4)))),
-                marker_color=C_GREEN, marker_line_width=0,
+                marker_color=get_colors()["green"], marker_line_width=0,
                 text=df_best["seo_improvement"].apply(
                     lambda x: str(max(4, min(8, round(4 + (x + 0.5) * 4))))
                 ),
                 textposition="outside",
-                textfont=dict(color=C_GREEN, size=10)
+                textfont=dict(color=get_colors()["green"], size=10)
             ))
-            fig_cit.update_layout(**PLOT_LAYOUT, barmode="group", height=320, xaxis_tickangle=-35,
+            fig_cit.update_layout(**get_plot_layout(), barmode="group", height=320, xaxis_tickangle=-35,
                 yaxis_title="Citation Count")
             st.plotly_chart(fig_cit, use_container_width=True)
 
@@ -604,7 +662,7 @@ if page == "📊 Overview":
             textfont=dict(size=10, color="#6b7fa3")
         ))
         fig_imp.add_hline(y=0, line_dash="dash", line_color=C_MUTED, line_width=1)
-        fig_imp.update_layout(**PLOT_LAYOUT, height=300, xaxis_tickangle=-35, yaxis_title="SEO Score Delta (pts)")
+        fig_imp.update_layout(**get_plot_layout(), height=300, xaxis_tickangle=-35, yaxis_title="SEO Score Delta (pts)")
         st.plotly_chart(fig_imp, use_container_width=True)
 
         # ── Row 3: Retrieval Quality scatter + Readability ────────────────────
@@ -628,7 +686,7 @@ if page == "📊 Overview":
                 textfont=dict(size=9, color=C_MUTED)
             )
             fig3.update_layout(
-                **PLOT_LAYOUT, height=300,
+                **get_plot_layout(), height=300,
                 coloraxis_showscale=False,
                 xaxis_title="Avg Similarity Score",
                 yaxis_title="SEO Improvement (pts)"
@@ -640,13 +698,13 @@ if page == "📊 Overview":
             fig4 = go.Figure()
             fig4.add_trace(go.Bar(
                 name="Baseline", x=df_best["keyword"], y=df_best["baseline_readability"],
-                marker_color=C_PURPLE, marker_line_width=0
+                marker_color=get_colors()["purple"], marker_line_width=0
             ))
             fig4.add_trace(go.Bar(
                 name="RAG", x=df_best["keyword"], y=df_best["rag_readability"],
-                marker_color=C_GREEN, marker_line_width=0
+                marker_color=get_colors()["green"], marker_line_width=0
             ))
-            fig4.update_layout(**PLOT_LAYOUT, barmode="group", height=300, xaxis_tickangle=-35)
+            fig4.update_layout(**get_plot_layout(), barmode="group", height=300, xaxis_tickangle=-35)
             st.plotly_chart(fig4, use_container_width=True)
 
 
@@ -823,9 +881,9 @@ elif page == "🧪 Experiment Lab":
                     "RAG":      [rag.get("seo_score", 0),      rag.get("readability_score", 0),      rag.get("keyword_density", 0)],
                 })
                 fig = go.Figure()
-                fig.add_trace(go.Bar(name="Baseline", x=compare_df["Metric"], y=compare_df["Baseline"], marker_color=C_PURPLE, marker_line_width=0))
-                fig.add_trace(go.Bar(name="RAG",      x=compare_df["Metric"], y=compare_df["RAG"],      marker_color=C_ACCENT,  marker_line_width=0))
-                fig.update_layout(**PLOT_LAYOUT, barmode="group", height=260, title_text="Metric Comparison", title_font=dict(color=C_ACCENT, size=13))
+                fig.add_trace(go.Bar(name="Baseline", x=compare_df["Metric"], y=compare_df["Baseline"], marker_color=get_colors()["purple"], marker_line_width=0))
+                fig.add_trace(go.Bar(name="RAG",      x=compare_df["Metric"], y=compare_df["RAG"],      marker_color=get_colors()["accent"],  marker_line_width=0))
+                fig.update_layout(**get_plot_layout(), barmode="group", height=260, title_text="Metric Comparison", title_font=dict(color=C_ACCENT, size=13))
                 st.plotly_chart(fig, use_container_width=True)
 
 
@@ -1221,7 +1279,7 @@ elif page == "📚 Knowledge Base":
             textposition="outside",
             textfont=dict(color=C_MUTED, size=11)
         ))
-        fig_kb.update_layout(**PLOT_LAYOUT, height=380, xaxis_title="Number of Chunks", yaxis_title="")
+        fig_kb.update_layout(**get_plot_layout(), height=380, xaxis_title="Number of Chunks", yaxis_title="")
         st.plotly_chart(fig_kb, use_container_width=True)
 
         # Document cards
@@ -1260,65 +1318,48 @@ elif page == "📚 Knowledge Base":
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PAGE: SEO SITE AUDIT (Google PageSpeed Insights API)
+# PAGE: SEO SITE AUDIT (SEOptimer Integration)
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "🌐 SEO Site Audit":
 
-    st.markdown("<div class='section-title'>SEO SITE AUDIT — Powered by Google PageSpeed Insights</div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#6b7fa3; font-size:14px; margin-bottom:24px;'>Audit any live website using the official Google PageSpeed Insights API — the same tool Google uses to evaluate websites for search ranking. Returns real Core Web Vitals, Lighthouse scores, and actionable recommendations.</p>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>SEO SITE AUDIT — Powered by SEOptimer API</div>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#6b7fa3; font-size:14px; margin-bottom:24px;'>Audit any live website for SEO quality using the SEOptimer API. Checks on-page factors, performance, mobile-friendliness, and more across 100+ data points.</p>", unsafe_allow_html=True)
 
-    # API Key Setup
-    with st.expander("⚙️ Google PageSpeed API Setup", expanded=False):
+    # API key input
+    with st.expander("⚙️ SEOptimer API Setup", expanded=False):
         st.markdown("""
-        <div style='background:#141c35; border:1px solid #00d4ff33; border-radius:10px; padding:16px; margin-bottom:12px;'>
-            <div style='font-family:Space Mono,monospace; font-size:11px; color:#00d4ff; margin-bottom:8px;'>HOW TO GET FREE API KEY (2 minutes)</div>
+        <div style='background:#141c35; border:1px solid #f0c04033; border-radius:10px; padding:16px; margin-bottom:12px;'>
+            <div style='font-family:Space Mono,monospace; font-size:11px; color:#f0c040; margin-bottom:8px;'>HOW TO GET FREE API KEY</div>
             <ol style='color:#e8eef8; font-size:13px; line-height:2;'>
-                <li>Go to <a href='https://console.cloud.google.com/' target='_blank' style='color:#00d4ff;'>console.cloud.google.com</a></li>
-                <li>Create a new project</li>
-                <li>Search for <b>PageSpeed Insights API</b> → Enable it</li>
-                <li>Go to APIs &amp; Services → Credentials → Create API Key</li>
-                <li>Copy your key and paste below</li>
+                <li>Go to <a href='https://www.seoptimer.com/register' target='_blank' style='color:#00d4ff;'>seoptimer.com/register</a></li>
+                <li>Create a free account</li>
+                <li>Go to Account → API</li>
+                <li>Copy your API key and paste below</li>
             </ol>
-            <div style='font-size:12px; color:#6b7fa3; margin-top:8px;'>✅ Completely free · No credit card · 25,000 requests/day</div>
+            <div style='font-size:12px; color:#6b7fa3; margin-top:8px;'>Free plan: 50 audits/month · No credit card required</div>
         </div>
         """, unsafe_allow_html=True)
-        psi_key_input = st.text_input("Google PageSpeed API Key", type="password",
-                                       placeholder="AIza...", key="psi_key")
-        if psi_key_input:
-            st.session_state["psi_api_key"] = psi_key_input
-            st.success("✅ API key saved for this session.")
+        api_key_input = st.text_input("SEOptimer API Key", type="password", placeholder="your-api-key-here", key="seoptimer_key")
+        if api_key_input:
+            st.session_state["seoptimer_api_key"] = api_key_input
+            st.success("API key saved for this session.")
 
-    psi_key = st.session_state.get("psi_api_key", os.getenv("PAGESPEED_API_KEY", ""))
+    seoptimer_key = st.session_state.get("seoptimer_api_key", "")
 
-    # URL input
-    col1, col2, col3 = st.columns([2.5, 0.8, 0.8])
+    col1, col2 = st.columns([3, 1])
     with col1:
-        audit_url = st.text_input("Website URL to Audit",
-                                   placeholder="e.g. https://developers.google.com/search",
-                                   key="audit_url")
+        audit_url = st.text_input("Website URL to Audit", placeholder="e.g. https://example.com", key="audit_url")
     with col2:
-        strategy = st.selectbox("Device", ["mobile", "desktop"], key="psi_strategy")
-    with col3:
         st.markdown("<br>", unsafe_allow_html=True)
-        audit_btn = st.button("🌐 Run Audit", use_container_width=True)
+        audit_btn = st.button("🌐 Run SEO Audit", use_container_width=True)
 
-    if not psi_key:
-        st.markdown("""
-        <div style='background:#f0c04011; border:1px solid #f0c04033; border-radius:8px;
-                    padding:12px 16px; margin-top:8px; margin-bottom:20px;'>
-            <span style='font-size:12px; color:#f0c040;'>⚠️ No API key found.
-            Add your free Google PageSpeed API key above or add
-            <b>PAGESPEED_API_KEY</b> to your .env file to get real audit results.</span>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div style='background:#00e5a011; border:1px solid #00e5a033; border-radius:8px;
-                    padding:12px 16px; margin-top:8px; margin-bottom:20px;'>
-            <span style='font-size:12px; color:#00e5a0;'>✅ API key loaded — audits will return
-            <b>real Google Lighthouse data</b> for any URL you enter.</span>
-        </div>
-        """, unsafe_allow_html=True)
+    # Demo mode notice
+    st.markdown("""
+    <div style='background:#00d4ff11; border:1px solid #00d4ff33; border-radius:8px; padding:12px 16px; margin-top:8px; margin-bottom:20px;'>
+        <span style='font-size:12px; color:#00d4ff;'>💡 <b>Demo Mode Available</b> — Enter any URL and click Run SEO Audit to see a simulated audit report.
+        Add your SEOptimer API key above to get real audit data.</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     if audit_btn:
         if not audit_url.strip():
@@ -1328,204 +1369,167 @@ elif page == "🌐 SEO Site Audit":
             if not url.startswith("http"):
                 url = "https://" + url
 
-            with st.spinner(f"Running Google Lighthouse audit on {url} — this takes 15–30 seconds..."):
-                try:
-                    import requests as _r
-                    params = {
+            with st.spinner(f"Auditing {url} ..."):
+
+                audit_data = None
+                use_demo = False
+
+                # Try real SEOptimer API if key provided
+                if seoptimer_key:
+                    try:
+                        import requests as req
+                        resp = req.get(
+                            f"https://api.seoptimer.com/v2.0/report/create",
+                            params={"url": url},
+                            headers={"x-api-key": seoptimer_key},
+                            timeout=30
+                        )
+                        if resp.status_code == 200:
+                            audit_data = resp.json()
+                        else:
+                            st.warning(f"API returned {resp.status_code}. Showing demo report.")
+                            use_demo = True
+                    except Exception as ex:
+                        st.warning(f"API call failed: {ex}. Showing demo report.")
+                        use_demo = True
+                else:
+                    use_demo = True
+
+                # Demo report if no API key or API failed
+                if use_demo:
+                    import random
+                    random.seed(len(url))
+                    audit_data = {
+                        "demo": True,
                         "url": url,
-                        "strategy": strategy,
-                        "category": ["performance", "accessibility", "best-practices", "seo"],
+                        "overall_grade": random.choice(["A", "B+", "B", "C+"]),
+                        "overall_score": random.randint(62, 91),
+                        "checks": {
+                            "On-Page SEO": {
+                                "score": random.randint(60, 95),
+                                "items": [
+                                    {"name": "Title Tag", "status": random.choice(["pass","pass","warn"]), "detail": "Title tag found and optimized"},
+                                    {"name": "Meta Description", "status": random.choice(["pass","warn"]), "detail": "Meta description present"},
+                                    {"name": "H1 Tag", "status": "pass", "detail": "H1 tag found"},
+                                    {"name": "Keyword in Title", "status": random.choice(["pass","warn"]), "detail": "Target keyword detected in title"},
+                                    {"name": "Image Alt Text", "status": random.choice(["pass","warn","fail"]), "detail": "Some images missing alt text"},
+                                    {"name": "Internal Links", "status": "pass", "detail": "Internal linking structure detected"},
+                                ]
+                            },
+                            "Performance": {
+                                "score": random.randint(50, 90),
+                                "items": [
+                                    {"name": "Page Speed", "status": random.choice(["pass","warn"]), "detail": f"Load time ~{random.uniform(1.2,4.5):.1f}s"},
+                                    {"name": "Page Size", "status": random.choice(["pass","warn"]), "detail": f"{random.randint(400,2000)}KB total size"},
+                                    {"name": "HTTPS", "status": "pass" if url.startswith("https") else "fail", "detail": "Secure connection"},
+                                    {"name": "Compression", "status": random.choice(["pass","warn"]), "detail": "Gzip compression"},
+                                ]
+                            },
+                            "Mobile": {
+                                "score": random.randint(65, 98),
+                                "items": [
+                                    {"name": "Mobile Friendly", "status": random.choice(["pass","pass","warn"]), "detail": "Responsive design detected"},
+                                    {"name": "Viewport Meta Tag", "status": "pass", "detail": "Viewport configured correctly"},
+                                    {"name": "Touch Elements", "status": random.choice(["pass","warn"]), "detail": "Touch targets sized correctly"},
+                                ]
+                            },
+                            "Technical": {
+                                "score": random.randint(55, 92),
+                                "items": [
+                                    {"name": "Robots.txt", "status": random.choice(["pass","warn"]), "detail": "robots.txt found"},
+                                    {"name": "XML Sitemap", "status": random.choice(["pass","fail"]), "detail": "Sitemap.xml status"},
+                                    {"name": "Canonical Tags", "status": random.choice(["pass","warn"]), "detail": "Canonical URL configured"},
+                                    {"name": "Schema Markup", "status": random.choice(["pass","fail","warn"]), "detail": "Structured data check"},
+                                    {"name": "404 Page", "status": "pass", "detail": "Custom 404 page present"},
+                                ]
+                            },
+                            "Social": {
+                                "score": random.randint(40, 85),
+                                "items": [
+                                    {"name": "Open Graph Tags", "status": random.choice(["pass","warn","fail"]), "detail": "OG tags for social sharing"},
+                                    {"name": "Twitter Cards", "status": random.choice(["pass","warn","fail"]), "detail": "Twitter card metadata"},
+                                ]
+                            }
+                        }
                     }
-                    if psi_key:
-                        params["key"] = psi_key
 
-                    resp = _r.get(
-                        "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
-                        params=params, timeout=60
-                    )
+            # Display Results
+            is_demo = audit_data.get("demo", False)
+            if is_demo:
+                st.info("📊 Demo Report — Add your SEOptimer API key to get real audit data for this URL.")
 
-                    if resp.status_code != 200:
-                        st.error(f"API Error {resp.status_code}: {resp.text[:300]}")
-                        st.stop()
+            st.markdown("<br>", unsafe_allow_html=True)
 
-                    data = resp.json()
-                    lh = data.get("lighthouseResult", {})
-                    cats = lh.get("categories", {})
-                    audits = lh.get("audits", {})
+            # Overall Score
+            overall = audit_data.get("overall_score", 0)
+            grade = audit_data.get("overall_grade", "N/A")
+            score_color = C_GREEN if overall >= 80 else (C_GOLD if overall >= 60 else C_RED)
 
-                    # ── Category scores ─────────────────────────────────────
-                    def cat_score(key):
-                        c = cats.get(key, {})
-                        s = c.get("score")
-                        return round(s * 100) if s is not None else 0
+            st.markdown(f"""
+            <div style='background:#141c35; border:1px solid {score_color}44; border-radius:16px; padding:24px 32px; margin-bottom:24px; text-align:center;'>
+                <div style='font-family:Space Mono,monospace; font-size:11px; color:#6b7fa3; letter-spacing:2px; margin-bottom:8px;'>OVERALL SEO GRADE</div>
+                <div style='font-family:Space Mono,monospace; font-size:72px; font-weight:700; color:{score_color}; line-height:1;'>{grade}</div>
+                <div style='font-family:Space Mono,monospace; font-size:24px; color:{score_color}; margin-top:4px;'>{overall}/100</div>
+                <div style='font-size:12px; color:#6b7fa3; margin-top:8px;'>Audited: <span style='color:#00d4ff;'>{url}</span></div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                    perf  = cat_score("performance")
-                    acc   = cat_score("accessibility")
-                    bp    = cat_score("best-practices")
-                    seo   = cat_score("seo")
-                    overall = round((perf + acc + bp + seo) / 4)
-
-                    # Overall grade
-                    if overall >= 90: grade, grade_color = "A", C_GREEN
-                    elif overall >= 80: grade, grade_color = "B+", C_GREEN
-                    elif overall >= 70: grade, grade_color = "B", C_GOLD
-                    elif overall >= 60: grade, grade_color = "C+", C_GOLD
-                    else: grade, grade_color = "C", C_RED
-
-                    # ── Core Web Vitals ──────────────────────────────────────
-                    def audit_val(key):
-                        a = audits.get(key, {})
-                        return a.get("displayValue", "N/A"), a.get("score", 0)
-
-                    lcp_val, lcp_s = audit_val("largest-contentful-paint")
-                    fcp_val, fcp_s = audit_val("first-contentful-paint")
-                    cls_val, cls_s = audit_val("cumulative-layout-shift")
-                    tbt_val, tbt_s = audit_val("total-blocking-time")
-                    si_val,  si_s  = audit_val("speed-index")
-                    tti_val, tti_s = audit_val("interactive")
-
-                    def score_color(s):
-                        if s is None: return C_MUTED
-                        if s >= 0.9: return C_GREEN
-                        if s >= 0.5: return C_GOLD
-                        return C_RED
-
-                    def pass_fail(s):
-                        if s is None: return "warn", "⚠️"
-                        if s >= 0.9: return "pass", "✅"
-                        if s >= 0.5: return "warn", "⚠️"
-                        return "fail", "❌"
-
-                    # ── DISPLAY ──────────────────────────────────────────────
-
-                    # Overall grade card
-                    st.markdown("<br>", unsafe_allow_html=True)
+            # Category scores
+            checks = audit_data.get("checks", {})
+            cat_cols = st.columns(len(checks))
+            for i, (cat_name, cat_data) in enumerate(checks.items()):
+                score = cat_data.get("score", 0)
+                c = C_GREEN if score >= 80 else (C_GOLD if score >= 60 else C_RED)
+                with cat_cols[i]:
                     st.markdown(f"""
-                    <div style='background:#141c35; border:1px solid {grade_color}44;
-                                border-radius:16px; padding:24px 32px; margin-bottom:24px; text-align:center;'>
-                        <div style='font-family:Space Mono,monospace; font-size:11px;
-                                    color:#6b7fa3; letter-spacing:2px; margin-bottom:8px;'>
-                            OVERALL LIGHTHOUSE SCORE ({strategy.upper()})
-                        </div>
-                        <div style='font-family:Space Mono,monospace; font-size:72px;
-                                    font-weight:700; color:{grade_color}; line-height:1;'>{grade}</div>
-                        <div style='font-family:Space Mono,monospace; font-size:24px;
-                                    color:{grade_color}; margin-top:4px;'>{overall}/100</div>
-                        <div style='font-size:12px; color:#6b7fa3; margin-top:8px;'>
-                            Audited: <span style='color:#00d4ff;'>{url}</span>
-                        </div>
+                    <div style='background:#0f1629; border:1px solid {c}44; border-radius:10px; padding:14px; text-align:center;'>
+                        <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;'>{cat_name}</div>
+                        <div style='font-family:Space Mono,monospace; font-size:22px; font-weight:700; color:{c};'>{score}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # 4 category score cards
-                    c1, c2, c3, c4 = st.columns(4)
-                    for col, label, score in [
-                        (c1, "Performance", perf),
-                        (c2, "Accessibility", acc),
-                        (c3, "Best Practices", bp),
-                        (c4, "SEO", seo),
-                    ]:
-                        col_c = C_GREEN if score >= 80 else (C_GOLD if score >= 60 else C_RED)
-                        with col:
-                            st.markdown(f"""
-                            <div style='background:#0f1629; border:1px solid {col_c}44;
-                                        border-radius:10px; padding:14px; text-align:center; margin-bottom:16px;'>
-                                <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase;
-                                            letter-spacing:1px; margin-bottom:6px;'>{label}</div>
-                                <div style='font-family:Space Mono,monospace; font-size:28px;
-                                            font-weight:700; color:{col_c};'>{score}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
-                    st.markdown("<br>", unsafe_allow_html=True)
+            # Detailed checks per category
+            st.markdown("<div class='section-title'>DETAILED AUDIT RESULTS</div>", unsafe_allow_html=True)
 
-                    # Core Web Vitals
-                    st.markdown("<div class='section-title'>CORE WEB VITALS</div>", unsafe_allow_html=True)
-                    st.markdown("<p style='color:#6b7fa3; font-size:12px; margin-bottom:16px;'>Real metrics from Google Lighthouse — these directly influence your search rankings.</p>", unsafe_allow_html=True)
+            status_icon  = {"pass": "✅", "warn": "⚠️", "fail": "❌"}
+            status_color = {"pass": C_GREEN, "warn": C_GOLD, "fail": C_RED}
 
-                    cwv_metrics = [
-                        ("Largest Contentful Paint", lcp_val, lcp_s, "LCP measures loading performance. Target: < 2.5s"),
-                        ("First Contentful Paint",   fcp_val, fcp_s, "FCP measures time until first content appears. Target: < 1.8s"),
-                        ("Cumulative Layout Shift",  cls_val, cls_s, "CLS measures visual stability. Target: < 0.1"),
-                        ("Total Blocking Time",      tbt_val, tbt_s, "TBT measures interactivity. Target: < 200ms"),
-                        ("Speed Index",              si_val,  si_s,  "Speed Index measures how quickly content is visually displayed."),
-                        ("Time to Interactive",      tti_val, tti_s, "TTI measures when page becomes fully interactive."),
-                    ]
-
-                    for name, val, sc, desc in cwv_metrics:
-                        st_val, icon = pass_fail(sc)
-                        col_c = score_color(sc)
+            for cat_name, cat_data in checks.items():
+                score = cat_data.get("score", 0)
+                c = C_GREEN if score >= 80 else (C_GOLD if score >= 60 else C_RED)
+                with st.expander(f"{cat_name}  —  Score: {score}/100"):
+                    for item in cat_data.get("items", []):
+                        st_val = item.get("status", "warn")
+                        icon   = status_icon.get(st_val, "⚠️")
+                        col_v  = status_color.get(st_val, C_GOLD)
                         st.markdown(f"""
-                        <div style='display:flex; align-items:center; gap:16px; padding:12px 0;
-                                    border-bottom:1px solid #1e2d50;'>
-                            <span style='font-size:18px;'>{icon}</span>
+                        <div style='display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #1e2d50;'>
+                            <span style='font-size:16px;'>{icon}</span>
                             <div style='flex:1;'>
-                                <div style='font-size:13px; font-weight:600; color:#e8eef8;'>{name}</div>
-                                <div style='font-size:11px; color:#6b7fa3; margin-top:2px;'>{desc}</div>
+                                <div style='font-size:13px; font-weight:600; color:#e8eef8;'>{item.get("name","")}</div>
+                                <div style='font-size:12px; color:#6b7fa3; margin-top:2px;'>{item.get("detail","")}</div>
                             </div>
-                            <div style='font-family:Space Mono,monospace; font-size:16px;
-                                        font-weight:700; color:{col_c}; min-width:80px; text-align:right;'>{val}</div>
+                            <span style='font-family:Space Mono,monospace; font-size:11px; color:{col_v}; text-transform:uppercase;'>{st_val}</span>
                         </div>
                         """, unsafe_allow_html=True)
 
-                    st.markdown("<br>", unsafe_allow_html=True)
-
-                    # Detailed audit opportunities
-                    st.markdown("<div class='section-title'>DETAILED AUDIT RESULTS</div>", unsafe_allow_html=True)
-
-                    # Group audits by category
-                    cat_audit_map = {
-                        "Performance": ["render-blocking-resources", "unused-css-rules", "unused-javascript",
-                                        "uses-optimized-images", "uses-webp-images", "uses-text-compression",
-                                        "uses-responsive-images", "efficient-animated-content"],
-                        "SEO": ["meta-description", "document-title", "hreflang", "canonical",
-                                "robots-txt", "image-alt", "crawlable-anchors", "structured-data"],
-                        "Accessibility": ["image-alt", "button-name", "color-contrast",
-                                          "html-has-lang", "link-name", "label"],
-                        "Best Practices": ["is-on-https", "uses-http2", "no-vulnerable-libraries",
-                                           "csp-xss", "charset"],
-                    }
-
-                    cat_scores_map = {
-                        "Performance": perf, "SEO": seo,
-                        "Accessibility": acc, "Best Practices": bp
-                    }
-
-                    for cat_name, audit_keys in cat_audit_map.items():
-                        cat_sc = cat_scores_map.get(cat_name, 0)
-                        cat_c = C_GREEN if cat_sc >= 80 else (C_GOLD if cat_sc >= 60 else C_RED)
-                        with st.expander(f"{cat_name} — Score: {cat_sc}/100"):
-                            shown = 0
-                            for key in audit_keys:
-                                audit = audits.get(key)
-                                if not audit:
-                                    continue
-                                a_score = audit.get("score")
-                                if a_score is None:
-                                    continue
-                                st_val, icon = pass_fail(a_score)
-                                col_c = score_color(a_score)
-                                title = audit.get("title", key)
-                                desc  = audit.get("description", "")[:120]
-                                disp  = audit.get("displayValue", "")
-                                st.markdown(f"""
-                                <div style='display:flex; align-items:center; gap:12px; padding:10px 0;
-                                            border-bottom:1px solid #1e2d50;'>
-                                    <span style='font-size:16px;'>{icon}</span>
-                                    <div style='flex:1;'>
-                                        <div style='font-size:13px; font-weight:600; color:#e8eef8;'>{title}</div>
-                                        <div style='font-size:11px; color:#6b7fa3; margin-top:2px;'>{desc}</div>
-                                    </div>
-                                    <span style='font-family:Space Mono,monospace; font-size:11px;
-                                                color:{col_c}; text-align:right;'>{disp}</span>
-                                </div>
-                                """, unsafe_allow_html=True)
-                                shown += 1
-                            if shown == 0:
-                                st.success("All audited checks passed for this category!")
-
-
-
-                except Exception as e:
-                    st.error(f"Audit failed: {str(e)}")
-                    st.info("Make sure the URL is publicly accessible and your API key is valid.")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>HOW THIS CONNECTS TO YOUR PROJECT</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style='background:#141c35; border:1px solid #00d4ff33; border-radius:12px; padding:20px 24px;'>
+                <p style='color:#e8eef8; font-size:13px; line-height:1.9; margin:0;'>
+                Your RAG system generates <span style='color:#00d4ff; font-weight:600;'>SEO-optimized blog content</span>
+                that can be published to any website. This SEOptimer audit then evaluates the
+                <span style='color:#a855f7; font-weight:600;'>published webpage</span> for technical SEO factors —
+                completing the full pipeline from <span style='color:#00e5a0; font-weight:600;'>content generation → publication → audit</span>.
+                <br><br>
+                SEOptimer checks <span style='color:#f0c040; font-weight:600;'>website-level factors</span> (speed, mobile, robots.txt, backlinks)
+                while your system ensures <span style='color:#00d4ff; font-weight:600;'>content-level quality</span>
+                (keyword density, structure, readability, factual accuracy via RAG).
+                Together they form a <span style='color:#00e5a0; font-weight:600;'>complete end-to-end SEO automation pipeline.</span>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
