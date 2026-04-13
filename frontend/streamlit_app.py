@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
-
+import time as _t
 import urllib.parse
 import hashlib
 
@@ -714,6 +714,7 @@ elif page == "🧪 Experiment Lab":
             kws = [k.strip() for k in batch_keywords_raw.strip().split("\n") if k.strip()]
             progress = st.progress(0)
             status = st.empty()
+            countdown = st.empty()
             results_log = []
 
             for i, kw in enumerate(kws):
@@ -727,7 +728,14 @@ elif page == "🧪 Experiment Lab":
                     results_log.append({"keyword": kw, "seo_delta": None, "status": f"✗ {err}"})
                 progress.progress((i + 1) / len(kws))
 
+                if i < len(kws) - 1:
+                    for remaining in range(35, 0, -1):
+                        countdown.markdown(f"<div style='font-size:12px; color:#6b7fa3;'>⏳ Waiting {remaining}s before next experiment...</div>", unsafe_allow_html=True)
+                        _t.sleep(1)
+                    countdown.empty()
+
             status.empty()
+            countdown.empty()
             st.success(f"Batch complete! Ran {len(kws)} experiments.")
             st.dataframe(pd.DataFrame(results_log).style.applymap(lambda v: "color: #00e5a0" if isinstance(v, float) and v >= 0 else "color: #ff4d6d", subset=["seo_delta"]), use_container_width=True)
 
