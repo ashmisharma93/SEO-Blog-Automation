@@ -300,7 +300,7 @@ def markdown_to_html(text: str) -> str:
 
     def process_inline(s):
         # Strip inline code backticks entirely — Gemini uses `<h1>` etc in blog content
-        # which causes broken rendering. Just remove the backtick wrapper.
+        # which causes broken rendering. We'll just remove the backtick wrapper.
         s = re.sub(r"`([^`]+)`", r"\1", s)
         # Strip any remaining raw HTML tags that Gemini sneaks in
         s = re.sub(r"<(h[1-6]|br|hr|p|div|span)[^>]*>", "", s)
@@ -581,7 +581,7 @@ if page == "📊 Overview":
                 unsafe_allow_html=True
             )
             n_kw = len(df_best)
-            avg_rag_cit  = 6.2   # realistic average from your experiments
+            avg_rag_cit  = 6.2   # realistic average from experiments
             avg_base_cit = 0
             fig_cit = go.Figure()
             fig_cit.add_trace(go.Bar(
@@ -647,26 +647,65 @@ if page == "📊 Overview":
             st.markdown("<div class='section-title'>RETRIEVAL QUALITY vs SEO IMPROVEMENT</div>", unsafe_allow_html=True)
             st.markdown(
                 "<p style='color:#6b7fa3;font-size:11px;margin-top:-8px;margin-bottom:6px;'>"
-                "Red dots = early experiments before knowledge base was fully ingested.</p>",
+                "Each dot is one keyword. Hover for details. "
+                "<span style='color:#e05252;'>●</span> RAG loss &nbsp;"
+                "<span style='color:#f5a623;'>●</span> Marginal &nbsp;"
+                "<span style='color:#4caf8a;'>●</span> RAG win</p>",
                 unsafe_allow_html=True
             )
-            fig3 = px.scatter(
-                df_best, x="avg_similarity_score", y="seo_improvement",
-                hover_data=["keyword"], text="keyword",
-                color="seo_improvement",
-                color_continuous_scale=[[0, C_RED], [0.5, C_GOLD], [1, C_GREEN]]
-            )
-            fig3.update_traces(
-                marker=dict(size=12, line=dict(width=1, color="#1e2d50")),
-                textposition="top center",
-                textfont=dict(size=9, color=C_MUTED)
-            )
-            fig3.update_layout(
-                **get_plot_layout(), height=300,
-                coloraxis_showscale=False,
-                xaxis_title="Avg Similarity Score",
-                yaxis_title="SEO Improvement (pts)"
-            )
+
+            # Quadrant reference lines
+            x_mid = df_best["avg_similarity_score"].median()
+            y_zero = 0
+
+            fig3 = go.Figure()
+
+            # Faint quadrant shading
+            x_min = df_best["avg_similarity_score"].min() - 0.02
+            x_max = df_best["avg_similarity_score"].max() + 0.02
+            y_min = df_best["seo_improvement"].min() - 0.1
+            y_max = df_best["seo_improvement"].max() + 0.1
+
+            # Reference lines
+            fig3.add_hline(y=0, line=dict(color="#ffffff", width=1, dash="dash"), opacity=0.25)
+            fig3.add_vline(x=x_mid, line=dict(color="#ffffff", width=1, dash="dash"), opacity=0.25)
+
+            # Quadrant labels
+            quad_style = dict(font=dict(size=9, color="#4a5a7a"), showarrow=False, opacity=0.6)
+            fig3.add_annotation(x=x_max, y=y_max, text="High Similarity<br>RAG Wins", xanchor="right", yanchor="top", **quad_style)
+            fig3.add_annotation(x=x_min, y=y_max, text="Low Similarity<br>RAG Wins", xanchor="left", yanchor="top", **quad_style)
+            fig3.add_annotation(x=x_max, y=y_min, text="High Similarity<br>RAG Loses", xanchor="right", yanchor="bottom", **quad_style)
+            fig3.add_annotation(x=x_min, y=y_min, text="Low Similarity<br>RAG Loses", xanchor="left", yanchor="bottom", **quad_style)
+
+            # Colour each dot by outcome
+            def dot_color(v):
+                if v > 0.15:   return C_GREEN
+                if v >= -0.05: return C_GOLD
+                return C_RED
+
+            for _, row in df_best.iterrows():
+                fig3.add_trace(go.Scatter(
+                    x=[row["avg_similarity_score"]],
+                    y=[row["seo_improvement"]],
+                    mode="markers",
+                    marker=dict(
+                        size=11,
+                        color=dot_color(row["seo_improvement"]),
+                        line=dict(width=1, color="#1e2d50"),
+                        opacity=0.88,
+                    ),
+                    hovertemplate=(
+                        f"<b>{row['keyword']}</b><br>"
+                        f"Similarity: {row['avg_similarity_score']:.3f}<br>"
+                        f"SEO Δ: {row['seo_improvement']:+.2f} pts<extra></extra>"
+                    ),
+                    showlegend=False,
+                ))
+
+            _layout = get_plot_layout()
+            _layout["xaxis"].update(title="Avg Similarity Score", range=[x_min, x_max])
+            _layout["yaxis"].update(title="SEO Improvement (pts)", range=[y_min, y_max])
+            fig3.update_layout(**_layout, height=300, hovermode="closest")
             st.plotly_chart(fig3, use_container_width=True)
 
         with col4:
@@ -1204,7 +1243,7 @@ elif page == "📚 Knowledge Base":
             if os.path.isdir(_candidate):
                 sys.path.insert(0, _candidate)
                 break
-        from app.services.vector_store import collection
+        from backend.app.services.vector_store import collection
 
         total_chunks = collection.count()
         all_data = collection.get(include=["metadatas", "documents"])
