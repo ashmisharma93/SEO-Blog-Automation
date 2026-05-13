@@ -157,13 +157,13 @@ Local SEO, E-E-A-T, Page Speed, International SEO, Video SEO, and more.
 
 | Metric | Value |
 |---|---|
-| Total Experiments | 42 |
-| Keywords Tested | 16 |
-| Avg RAG SEO Score | 88.0 |
-| Avg Baseline SEO Score | 87.4 |
-| Avg SEO Improvement | +0.6 pts |
-| t-Statistic | 2.064 |
-| p-value | 0.0454 (p < 0.05) |
+| Total Experiments | 56 |
+| Keywords Tested | 28 |
+| Avg RAG SEO Score | 90.4 |
+| Avg Baseline SEO Score | 90 |
+| Avg SEO Improvement | +0.4 pts |
+| t-Statistic | 2.2712 |
+| p-value | 0.0271 (p < 0.05) |
 | Best Single Improvement | +11.67 pts (crawl budget) |
 | RAG Citations per Blog | 4–8 (avg) |
 | Baseline Citations per Blog | 0 |
