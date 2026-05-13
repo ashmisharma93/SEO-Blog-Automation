@@ -32,12 +32,12 @@ This system uses a novel RAG architecture combining:
 - SEO Site Audit powered by Google PageSpeed Insights
 
 ### 📈 Statistical Validation
-- Paired t-test across 42 experiments
-- t-statistic: **2.064** | p-value: **0.0454** (p < 0.05)
+- Paired t-test across 56 experiments
+- t-statistic: **2.2712** | p-value: **0.0271** (p < 0.05)
 - Cohen's d effect size reporting
 - 95% Confidence Intervals
-- Average RAG SEO Score: **88.0** vs Baseline: **87.4**
-- Average SEO Improvement: **+0.6 pts** consistently
+- Average RAG SEO Score: **90.4** vs Baseline: **90.0**
+- Average SEO Improvement: **+0.4 pts** consistently
 
 ### 🔗 Factual Grounding (Citation Advantage)
 - RAG generates 4–8 verified source citations per blog
