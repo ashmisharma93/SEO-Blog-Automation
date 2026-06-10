@@ -11,3 +11,6 @@ google-genai
 textstat
 scipy
 plotly
+numpy
+pandas
+pydantic
