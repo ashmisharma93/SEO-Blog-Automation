@@ -6,11 +6,13 @@ sqlalchemy
 langchain
 langchain-community
 chromadb
-sentence-transformers
+
+sentence-transformers==2.7.0
+transformers==4.41.2
+torch==2.3.1
+
 google-genai
 textstat
 scipy
 plotly
-numpy
-pandas
-pydantic
+pydantic-settings

@@ -3,7 +3,8 @@ import chromadb
 from sentence_transformers import SentenceTransformer
 
 # Embedding Model Management
-CURRENT_MODEL_NAME = "all-mpnet-base-v2"
+# CURRENT_MODEL_NAME = "all-mpnet-base-v2"
+CURRENT_MODEL_NAME = "all-MiniLM-L6-v2"
 embedding_model = SentenceTransformer(CURRENT_MODEL_NAME)
 
 
@@ -18,8 +19,17 @@ def set_embedding_model(model_name: str):
 
     print(f"\nSwitching embedding model → {model_name}\n")
 
-    embedding_model = SentenceTransformer(model_name)
+    # embedding_model = SentenceTransformer(model_name)
+    embedding_model = None
     CURRENT_MODEL_NAME = model_name
+
+def get_embedding_model():
+    global embedding_model
+
+    if embedding_model is None:
+        embedding_model = SentenceTransformer(CURRENT_MODEL_NAME)
+
+    return embedding_model  
 
 
 def get_current_embedding_model():
@@ -35,7 +45,9 @@ def generate_embedding(text: str):
     Generate embedding vector for given text.
     """
 
-    return embedding_model.encode(text).tolist()
+    # return embedding_model.encode(text).tolist()
+    model = get_embedding_model()
+    return model.encode(text).tolist()
 
 _THIS_FILE = os.path.abspath(__file__)  # backend/app/services/vector_store.py
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(_THIS_FILE)))  # backend/
