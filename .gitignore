@@ -32,7 +32,7 @@ backend/seo_blog.db
 seo_blog.db
 
 # ── ChromaDB Vector Store (large binary files) ────────────────────────────────
-# data/vector_store/
+data/vector_store/
 chroma_db/
 *.chroma
 

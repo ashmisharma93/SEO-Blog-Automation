@@ -5,7 +5,7 @@ from backend.app.models.document_chunk import DocumentChunk
 from backend.app.services.vector_store import generate_embedding, chroma_client
 
 
-# ── Chunking Strategies ───────────────────────────────────────────────────────
+# Chunking Strategies 
 
 def split_by_headings(content: str):
     """
@@ -28,7 +28,7 @@ def split_by_headings(content: str):
 
 def split_by_fixed_size(content: str, chunk_size: int = 600):
     """
-    Naive fixed-size chunking — used as baseline for comparison.
+    Naive fixed-size chunking - used as baseline for comparison.
     """
     return [content[i:i + chunk_size] for i in range(0, len(content), chunk_size)]
 
@@ -43,7 +43,7 @@ def split_text(content: str, strategy: str = "heading"):
     return split_by_headings(content)
 
 
-# ── Ingest Knowledge Source ───────────────────────────────────────────────────
+# Ingest Knowledge Source 
 
 def ingest_knowledge_source(
     db: Session,
@@ -52,9 +52,10 @@ def ingest_knowledge_source(
     category: str = "general",
     domain: str = "seo",
     source: str = "unknown",
-    chunking_strategy: str = "heading",   # NEW: strategy param
+    source_url: str = "",
+    chunking_strategy: str = "heading",
 ):
-    # Always fetch the live collection — avoids stale reference after delete/recreate
+    # Always fetch the live collection - avoids stale reference after delete/recreate
     collection = chroma_client.get_or_create_collection(name="seo_knowledge_base")
     """
     1. Save KnowledgeSource in SQL
@@ -93,7 +94,8 @@ def ingest_knowledge_source(
                     "category": category,
                     "domain": domain,
                     "source": source,
-                    "chunking_strategy": chunking_strategy,   # store for analysis
+                    "source_url": source_url,
+                    "chunking_strategy": chunking_strategy,
                 }],
             )
         except Exception:
@@ -108,6 +110,7 @@ def ingest_knowledge_source(
                     "category": category,
                     "domain": domain,
                     "source": source,
+                    "source_url": source_url,
                     "chunking_strategy": chunking_strategy,
                 }],
             )
@@ -119,7 +122,7 @@ def ingest_knowledge_source(
     }
 
 
-# ── Query Expansion ───────────────────────────────────────────────────────────
+# Query Expansion 
 
 def expand_query(query: str):
     """
@@ -139,7 +142,7 @@ def expand_query(query: str):
     return list(set(expansions))
 
 
-# ── Topic Detection ───────────────────────────────────────────────────────────
+# Topic Detection 
 
 def detect_topic(query: str):
     query = query.lower()
@@ -156,7 +159,7 @@ def detect_topic(query: str):
     return None
 
 
-# ── Retrieve Relevant Chunks ──────────────────────────────────────────────────
+# Retrieve Relevant Chunks 
 
 def retrieve_relevant_chunks(query: str, top_k: int = 3):
     # Always fetch the live collection
@@ -205,6 +208,7 @@ def retrieve_relevant_chunks(query: str, top_k: int = 3):
                     "similarity_score": float(score),
                     "title": meta.get("title", "SEO Knowledge Base") if meta else "SEO Knowledge Base",
                     "source": meta.get("source", "unknown") if meta else "unknown",
+                    "source_url": meta.get("source_url", "") if meta else "",
                 }
 
     retrieved_chunks = sorted(
@@ -214,6 +218,7 @@ def retrieve_relevant_chunks(query: str, top_k: int = 3):
                 "similarity_score": info["similarity_score"],
                 "title": info["title"],
                 "source": info["source"],
+                "source_url": info["source_url"],
             }
             for doc, info in all_results.items()
         ],

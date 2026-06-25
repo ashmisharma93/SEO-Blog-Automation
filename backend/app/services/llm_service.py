@@ -33,7 +33,7 @@ def generate_blog_image(prompt: str, cache_key: str = None) -> str | None:
     Caches images locally to avoid re-generating on page reload.
     """
     if not settings.HF_API_KEY:
-        print("HF_API_KEY not set — skipping image generation")
+        print("HF_API_KEY not set - skipping image generation")
         return None
 
     _ensure_cache_dir()
@@ -75,7 +75,7 @@ def generate_blog_image(prompt: str, cache_key: str = None) -> str | None:
                 time.sleep(wait_time)
 
             elif response.status_code == 429:
-                print("HF rate limit hit — waiting 30s...")
+                print("HF rate limit hit - waiting 30s...")
                 time.sleep(30)
 
             else:
@@ -133,7 +133,7 @@ def build_image_prompt(keyword: str, section_heading: str = None) -> str:
     )
 
 
-# ── Gemini text generation ────────────────────────────────────────────────────
+# Gemini text generation 
 
 def clean_blog_output(text: str) -> str:
     """
@@ -194,7 +194,12 @@ def generate_seo_blog(keyword: str, context_chunks: list[str], source_metadata: 
         title = ""
         if source_metadata and i - 1 < len(source_metadata):
             title = source_metadata[i - 1].get("title", "")
+            source_url = source_metadata[i - 1].get("source_url", "")
+        else:
+            source_url = ""
         label = f"[Source: {title}]" if title else f"[Source {i}]"
+        if source_url:
+            label = f"{label} {source_url}"
         formatted_context += f"\n{label}\n{chunk}\n"
 
     prompt = f"""
@@ -205,7 +210,7 @@ KNOWLEDGE SOURCES:
 
 TASK: Write a comprehensive, authoritative SEO blog on: "{keyword}"
 
-OUTPUT FORMAT — CRITICAL RULES (follow exactly):
+OUTPUT FORMAT - CRITICAL RULES (follow exactly):
 - Use ONLY plain markdown. No HTML tags whatsoever. No <h1>, <h2>, <title>, <p>, <code> or any angle-bracket tags.
 - Do NOT use backticks or code blocks anywhere. No ``` and no `inline code`.
 - Use ## for H2 headings and ### for H3 headings only.
@@ -239,7 +244,7 @@ You are an expert SEO strategist and content writer.
 
 Write a comprehensive, authoritative SEO blog on: "{keyword}"
 
-OUTPUT FORMAT — CRITICAL RULES (follow exactly):
+OUTPUT FORMAT - CRITICAL RULES (follow exactly):
 - Use ONLY plain markdown. No HTML tags whatsoever. No <h1>, <h2>, <title>, <p>, <code> or any angle-bracket tags.
 - Do NOT use backticks or code blocks anywhere. No ``` and no `inline code`.
 - Use ## for H2 headings and ### for H3 headings only.
@@ -267,5 +272,5 @@ Return ONLY the blog post. No preamble, no commentary, no HTML, no backticks.
 
 
 def generate_blog_image_url(keyword: str) -> str:
-    """Legacy function — kept for backward compatibility with blog_service.py."""
+    """Legacy function - kept for backward compatibility with blog_service.py."""
     return ""

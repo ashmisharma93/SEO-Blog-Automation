@@ -1,6 +1,6 @@
-import os
 import chromadb
 from sentence_transformers import SentenceTransformer
+from backend.app.core.paths import get_vector_store_path
 
 # Embedding Model Management
 # CURRENT_MODEL_NAME = "all-mpnet-base-v2"
@@ -17,7 +17,7 @@ def set_embedding_model(model_name: str):
     global embedding_model
     global CURRENT_MODEL_NAME
 
-    print(f"\nSwitching embedding model → {model_name}\n")
+    print(f"\nSwitching embedding model to {model_name}\n")
 
     # embedding_model = SentenceTransformer(model_name)
     embedding_model = None
@@ -49,21 +49,7 @@ def generate_embedding(text: str):
     model = get_embedding_model()
     return model.encode(text).tolist()
 
-_THIS_FILE = os.path.abspath(__file__)  # backend/app/services/vector_store.py
-_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(_THIS_FILE)))  # backend/
-_ROOT_DIR = os.path.dirname(_BACKEND_DIR)  # project root
-
-# Try new location first, fall back to old
-_NEW_PATH = os.path.join(_ROOT_DIR, "data", "vector_store")
-_OLD_PATH = os.path.join(_ROOT_DIR, "chroma_db")
-
-if os.path.isdir(_NEW_PATH):
-    CHROMA_PATH = _NEW_PATH
-elif os.path.isdir(_OLD_PATH):
-    CHROMA_PATH = _OLD_PATH
-else:
-    # Default to new location (will be created on first ingest)
-    CHROMA_PATH = _NEW_PATH
+CHROMA_PATH = str(get_vector_store_path())
 
 print(f"ChromaDB path: {CHROMA_PATH}")
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)

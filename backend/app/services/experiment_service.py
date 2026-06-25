@@ -30,11 +30,11 @@ def run_experiment(keyword: str, db: Session, chunking_strategy: str = "heading"
     except Exception as e:
         raise Exception(f"RAG generation failed: {str(e)}")
     
-    # ── Baseline ──────────────────────────────────────────────
+    # Baseline 
     baseline_blog = generate_seo_blog_without_rag(keyword)
     baseline_metrics = analyze_seo(baseline_blog, keyword)
 
-    # ── RAG ───────────────────────────────────────────────────
+    # RAG 
     retrieved = retrieve_relevant_chunks(keyword, top_k=5)
     context_chunks = [item["text"] for item in retrieved]
     similarity_scores = [item["similarity_score"] for item in retrieved]
@@ -46,7 +46,7 @@ def run_experiment(keyword: str, db: Session, chunking_strategy: str = "heading"
     rag_blog = generate_seo_blog(keyword=keyword, context_chunks=context_chunks)
     rag_metrics = analyze_seo(rag_blog, keyword)
 
-    # ── Compute Deltas ────────────────────────────────────────
+    # Compute Deltas 
     seo_improvement = rag_metrics["seo_score"] - baseline_metrics["seo_score"]
     readability_improvement = (
         rag_metrics["readability_score"] - baseline_metrics["readability_score"]
@@ -55,7 +55,7 @@ def run_experiment(keyword: str, db: Session, chunking_strategy: str = "heading"
         rag_metrics.get("citation_count", 0) - baseline_metrics.get("citation_count", 0)
     )
 
-    # ── Persist to DB ─────────────────────────────────────────
+    # Persist to DB 
     record = ExperimentResult(
         keyword=keyword,
         chunking_strategy=chunking_strategy,
@@ -149,7 +149,7 @@ def get_experiment_summary(db: Session):
             "interpretation": (
                 "RAG significantly outperforms baseline (p < 0.05)"
                 if p_value < 0.05
-                else "No significant difference detected yet — run more experiments"
+                else "No significant difference detected yet - run more experiments"
             ),
         },
         "per_experiment": [

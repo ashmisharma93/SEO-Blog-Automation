@@ -9,7 +9,7 @@ from backend.app.services.experiment_service import run_experiment, get_experime
 router = APIRouter(prefix="/rag", tags=["RAG"])
 
 
-# ── Request Schemas ───────────────────────────────────────────────────────────
+# Request Schemas 
 
 class IngestRequest(BaseModel):
     title: str
@@ -21,21 +21,21 @@ class RetrieveRequest(BaseModel):
     top_k: int = 3
 
 
-# ── Ingest ────────────────────────────────────────────────────────────────────
+# Ingest 
 
 @router.post("/ingest")
 def ingest(request: IngestRequest, db: Session = Depends(get_db)):
     return ingest_knowledge_source(db, request.title, request.content)
 
 
-# ── Retrieve ──────────────────────────────────────────────────────────────────
+# Retrieve 
 
 @router.post("/retrieve")
 def retrieve(request: RetrieveRequest):
     return retrieve_relevant_chunks(request.query, request.top_k)
 
 
-# ── Run Experiment ────────────────────────────────────────────────────────────
+# Run Experiment 
 
 @router.post("/experiments/run")
 def run_rag_experiment(
@@ -53,7 +53,7 @@ def run_rag_experiment(
     }
 
 
-# ── Experiment Summary (Aggregated Stats + T-Test) ────────────────────────────
+# Experiment Summary (Aggregated Stats + T-Test) 
 
 @router.get("/experiments/summary")
 def experiment_summary(db: Session = Depends(get_db)):
@@ -64,7 +64,7 @@ def experiment_summary(db: Session = Depends(get_db)):
     return get_experiment_summary(db)
 
 
-# ── All Experiment Records ────────────────────────────────────────────────────
+# All Experiment Records 
 
 @router.get("/experiments/all")
 def get_all_experiments(db: Session = Depends(get_db)):

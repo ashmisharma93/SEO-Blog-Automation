@@ -23,7 +23,11 @@ def create_blog(db: Session, title: str, keyword: str):
     context_chunks = [item["text"] for item in retrieved]
     similarity_scores = [item["similarity_score"] for item in retrieved]
     source_metadata = [
-        {"title": item.get("title", "SEO Knowledge Base"), "source": item.get("source", "unknown")}
+        {
+            "title": item.get("title", "SEO Knowledge Base"),
+            "source": item.get("source", "unknown"),
+            "source_url": item.get("source_url", ""),
+        }
         for item in retrieved
     ]
 

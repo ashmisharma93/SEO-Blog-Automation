@@ -1,31 +1,19 @@
 import os
-import re
 import sys
 
-# ── Always run from project root ─────────────────────────────────────────────
+# Always run from project root 
 # Adds project root to sys.path so 'backend.app.xxx' imports work correctly
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from backend.app.db.database import SessionLocal
+from backend.app.core.paths import get_knowledge_base_path
 from backend.app.services.rag_service import ingest_knowledge_source
 from backend.app.services.vector_store import chroma_client, get_current_embedding_model
 
-# ── Knowledge Base Path (supports new and old structure) ─────────────────────
-_ROOT_DIR = _PROJECT_ROOT
-
-# New structure: data/knowledge_base/
-# Old structure: backend/knowledge_base/
-_NEW_KB = os.path.join(_ROOT_DIR, "data", "knowledge_base")
-_OLD_KB = os.path.join(_ROOT_DIR, "backend", "knowledge_base")
-
-if os.path.isdir(_NEW_KB):
-    KNOWLEDGE_BASE_PATH = _NEW_KB
-elif os.path.isdir(_OLD_KB):
-    KNOWLEDGE_BASE_PATH = _OLD_KB
-else:
-    KNOWLEDGE_BASE_PATH = _NEW_KB  # default to new
+# Knowledge Base Path (supports new and old structure) 
+KNOWLEDGE_BASE_PATH = str(get_knowledge_base_path())
 
 print(f"Knowledge base path: {KNOWLEDGE_BASE_PATH}")
 
@@ -86,6 +74,7 @@ def ingest_all_documents():
                 category = metadata.get("category", "general")
                 domain   = metadata.get("domain",   "seo")
                 source   = metadata.get("source",   "unknown")
+                source_url = metadata.get("source_url", metadata.get("source_urls", ""))
 
                 ingest_knowledge_source(
                     db,
@@ -93,7 +82,8 @@ def ingest_all_documents():
                     content=content,
                     category=category,
                     domain=domain,
-                    source=source
+                    source=source,
+                    source_url=source_url
                 )
 
                 total_files += 1

@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
 import os
+from backend.app.core.paths import get_database_path
 
 load_dotenv()
 
@@ -13,20 +13,7 @@ class Settings:
         env_url = os.getenv("DATABASE_URL")
         if env_url:
             return env_url
-        this_dir = os.path.dirname(os.path.abspath(__file__))
-        backend_dir = os.path.dirname(this_dir)
-        app_dir = os.path.dirname(backend_dir)
-        root_dir = os.path.dirname(app_dir)
-
-        new_db = os.path.join(root_dir, "data", "seo_blog.db")
-        old_db = os.path.join(app_dir, "seo_blog.db")
-
-        if os.path.isfile(new_db):
-            return f"sqlite:///{new_db}"
-        elif os.path.isfile(old_db):
-            return f"sqlite:///{old_db}"
-        else:
-            return f"sqlite:///{new_db}"
+        return f"sqlite:///{get_database_path()}"
 
     # LLM keys
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")

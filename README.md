@@ -1,187 +1,157 @@
-# ⚡ SEO Blog Automation System — RAG-Powered Content Generation
+# SEO Blog Automation System: RAG-Powered Content Generation
 
-An intelligent SEO content automation system that retrieves knowledge from a structured knowledge base,
-generates factually grounded blogs using Retrieval-Augmented Generation (RAG), and compares them
-against baseline LLM generation through statistical evaluation.
+An SEO content research project that compares Retrieval-Augmented Generation (RAG) against baseline LLM generation. The system retrieves evidence from a curated SEO knowledge base, generates cited blog drafts, scores output quality, and stores experiment results for comparison.
 
-This system uses a novel RAG architecture combining:
-- ✔ Heading-Aware Semantic Chunking for knowledge base construction
-- ✔ Multi-Query Expansion (7 semantic variations per keyword)
-- ✔ ChromaDB Vector Store with SentenceTransformer embeddings
-- ✔ Google Gemini 2.5 Flash for blog generation
-- ✔ Five-Metric SEO Scoring Formula (100 pts)
-- ✔ Paired T-Test Statistical Validation
-- ✔ 7-Page Interactive Streamlit Research Dashboard
+The project is designed to demonstrate that RAG can improve factual grounding and source attribution for domain-specific content generation, especially when the baseline model is asked to answer without retrieved context.
 
----
+## Core Capabilities
 
-## 🚀 Features
+- Heading-aware semantic chunking for markdown knowledge-base documents
+- Multi-query expansion with seven semantic query variations per keyword
+- ChromaDB vector storage with SentenceTransformer embeddings
+- Gemini-powered blog generation with retrieved source context
+- SEO scoring across keyword density, word count, readability, structure, and keyword placement
+- RAG vs baseline experiment workflow with stored metrics
+- Streamlit dashboard for generation, retrieval explainability, knowledge-base inspection, and SEO audit utilities
 
-### 🧠 RAG Pipeline with 3 Novel Contributions
-- **Heading-Aware Chunking** — splits documents at H2/H3 boundaries instead of fixed character windows
-- **Multi-Query Expansion** — each keyword expanded into 7 semantic variations before retrieval
-- **Empirical Evaluation Framework** — five-metric scoring with Cohen's d, confidence intervals, and t-test
+## Project Structure
 
-### 📊 Research Dashboard (7 Pages)
-- Overview with RAG vs Baseline charts, citation advantage visualization, and t-test significance banner
-- Experiment Lab for running live RAG vs Baseline comparisons
-- Blog Generator with contextual section visuals and clickable source citations
-- All Records with CSV export for thesis analysis
-- RAG Explainability Panel showing query expansions and retrieved chunks
-- Knowledge Base Explorer with chunk distribution charts
-- SEO Site Audit powered by Google PageSpeed Insights
-
-### 📈 Statistical Validation
-- Paired t-test across 56 experiments
-- t-statistic: **2.2712** | p-value: **0.0271** (p < 0.05)
-- Cohen's d effect size reporting
-- 95% Confidence Intervals
-- Average RAG SEO Score: **90.4** vs Baseline: **90.0**
-- Average SEO Improvement: **+0.4 pts** consistently
-
-### 🔗 Factual Grounding (Citation Advantage)
-- RAG generates 4–8 verified source citations per blog
-- Baseline LLM generates 0 citations
-- 100% improvement in factual grounding
-- Citations sourced from Google Search Central, Moz, 
-  Ahrefs, and web.dev — rendered as clickable hyperlinks
-
----
-
-## 📂 Project Structure
-
-```
+```text
 SEO_BLOG_AUTOMATION/
-│
-├── backend/
-│   └── app/
-│       ├── api/              # health.py, blog.py, rag.py
-│       ├── core/             # config.py
-│       ├── db/               # database.py
-│       ├── models/           # blog.py, experiment_result.py, ...
-│       └── services/         # blog_service.py, experiment_service.py,
-│                             # llm_service.py, rag_service.py,
-│                             # seo_analyzer.py, vector_store.py
-│
-├── data/
-│   └── knowledge_base/       # 20 SEO markdown documents (380 chunks)
-│
-├── frontend/
-│   └── streamlit_app.py      # 7-page research dashboard
-│
-├── scripts/
-│   └── ingest_all.py         # Knowledge base ingestion script
-│
-├── .env.example              # Environment variable template
-├── requirements.txt          # Python dependencies
-└── README.md                 # Project documentation
+|-- backend/
+|   |-- app/
+|   |   |-- api/              # FastAPI route modules
+|   |   |-- core/             # configuration and path helpers
+|   |   |-- db/               # database setup
+|   |   |-- models/           # SQLAlchemy and response models
+|   |   `-- services/         # RAG, LLM, vector store, scoring services
+|   `-- knowledge_base/       # mirrored markdown corpus for backend-only deploys
+|-- data/
+|   |-- knowledge_base/       # primary 20-document SEO markdown corpus
+|   `-- vector_store/         # local ChromaDB persistence, ignored if regenerated
+|-- frontend/
+|   `-- streamlit_app.py      # research dashboard
+|-- scripts/
+|   `-- ingest_all.py         # knowledge-base ingestion script
+|-- requirements.txt
+|-- runtime.txt
+`-- README.md
 ```
 
----
+## Knowledge Base
 
-## 🧪 Installation & Usage
+The curated corpus contains 20 SEO markdown documents covering:
 
-### 1️⃣ Clone the repository
-```
-git clone https://github.com/yourusername/seo-blog-automation.git
-cd seo-blog-automation
-```
+- SEO fundamentals and keyword research
+- Technical SEO, crawling, indexing, canonicalization, redirects, and sitemaps
+- On-page SEO, SEO copywriting, content strategy, and content quality
+- E-E-A-T, ranking systems, and helpful content principles
+- Core Web Vitals, page speed, mobile SEO, and URL architecture
+- Structured data, video SEO, local SEO, international SEO, voice search, analytics, and SEO tools
 
-### 2️⃣ Create a virtual environment
-```
-conda create -n seo_blog_env python=3.10
+The documents cite authoritative sources such as Google Search Central, web.dev, Moz, Ahrefs, HubSpot, Schema.org, Google Search Console Help, and Google Business Profile Help. Each markdown file includes source metadata and canonical source URLs so retrieved chunks can be traced back to the material used during generation.
+
+## RAG Pipeline
+
+1. Markdown files are ingested from `data/knowledge_base` when available, with `backend/knowledge_base` as a fallback for backend-only deployments.
+2. Documents are split by markdown H2 and H3 headings so chunks preserve semantic sections.
+3. Each keyword is expanded into related search phrases before retrieval.
+4. ChromaDB returns the most relevant chunks and their metadata.
+5. Gemini receives the retrieved context and is instructed to cite sources inline using `[Source: Name]` notation.
+6. Generated posts are scored and stored for dashboard analysis.
+
+## SEO Scoring Formula
+
+| Metric | Points | Target |
+|---|---:|---|
+| Keyword density | 25 | Natural usage, strongest around 1.0-2.0% |
+| Word count | 25 | Full credit at 1,000+ words |
+| Readability | 10 | Flesch Reading Ease, clamped from 0-100 |
+| Content structure | 28 | H2 and H3 heading coverage |
+| Keyword placement | 12 | Keyword in title and early introduction |
+| Total | 100 | |
+
+The scoring model is intentionally simple and transparent. It is useful for comparing controlled generations inside this project, not as a universal SEO ranking predictor.
+
+## Setup
+
+### 1. Create and activate a virtual environment
+
+```bash
+conda create -n seo_blog_env python=3.11
 conda activate seo_blog_env
 ```
 
-### 3️⃣ Install dependencies
-```
+### 2. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 4️⃣ Set up environment variables
-```
-cp .env.example .env
-```
-Open `.env` and add your `GEMINI_API_KEY`
+### 3. Configure environment variables
 
-### 5️⃣ Ingest the knowledge base
+Create a `.env` file in the project root and add:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+HF_API_KEY=optional_hugging_face_key
 ```
+
+### 4. Ingest the knowledge base
+
+```bash
 python scripts/ingest_all.py
 ```
 
-### 6️⃣ Run the backend
-```
-cd backend
-uvicorn app.main:app --reload
+### 5. Run the backend
+
+From the project root:
+
+```bash
+uvicorn backend.app.main:app --reload
 ```
 
-### 7️⃣ Run the frontend *(new terminal)*
-```
+### 6. Run the Streamlit dashboard
+
+In a second terminal:
+
+```bash
 streamlit run frontend/streamlit_app.py
 ```
 
-Open `http://localhost:8501` in your browser.
+Open `http://localhost:8501`.
 
----
+## Render Deployment Notes
 
-## 📥 Knowledge Base
+For a backend deployment on Render, use the repository root as the build context when possible.
 
-The knowledge base contains 20 authoritative SEO markdown documents (380 chunks) from:
-- Google Search Central
-- Moz
-- Ahrefs
-- web.dev
-- HubSpot
-- Search Engine Land
+Recommended start command:
 
-Topics covered: Technical SEO, On-Page SEO, Link Building, Keyword Research,
-Core Web Vitals, Schema Markup, Voice Search SEO, Mobile SEO, Content Marketing,
-Local SEO, E-E-A-T, Page Speed, International SEO, Video SEO, and more.
+```bash
+uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+```
 
----
+If Render is configured with `backend` as the root directory, keep the mirrored `backend/knowledge_base` directory included so ingestion still has access to all 20 documents.
 
-## 📊 SEO Scoring Formula
+## Research Framing
 
-| Metric | Points | Target |
-|---|---|---|
-| Keyword Density | 25 pts | 1.0–2.0% |
-| Word Count | 25 pts | 1,000–1,800 words |
-| Readability | 10 pts | Flesch Reading Ease |
-| Content Structure | 28 pts | H2 + H3 heading counts |
-| Keyword Placement | 12 pts | Keyword in title + first 500 chars |
-| **Total** | **100 pts** | |
+This project compares two generation modes:
 
----
+- Baseline LLM: generates from the prompt without retrieved knowledge-base context.
+- RAG LLM: retrieves relevant SEO chunks first and generates from that grounded context.
 
-## 📈 Experimental Results
+The strongest expected advantage of RAG is not merely a higher SEO score. It is improved factual grounding, clearer source attribution, and better traceability from generated claims back to curated source material.
 
-| Metric | Value |
-|---|---|
-| Total Experiments | 56 |
-| Keywords Tested | 28 |
-| Avg RAG SEO Score | 90.4 |
-| Avg Baseline SEO Score | 90 |
-| Avg SEO Improvement | +0.4 pts |
-| t-Statistic | 2.2712 |
-| p-value | 0.0271 (p < 0.05) |
-| Best Single Improvement | +11.67 pts (crawl budget) |
-| RAG Citations per Blog | 4–8 (avg) |
-| Baseline Citations per Blog | 0 |
-| Factual Grounding Improvement | 100% |
----
+## Important Notes
 
-## 🛑 Important Note
+- Generated content should be reviewed by a human before publication.
+- Search guidance changes over time, so the knowledge base should be periodically refreshed.
+- The local SQLite database and ChromaDB files are development artifacts and can be regenerated from the markdown corpus.
+- API availability, model behavior, and rate limits can affect generation quality.
 
-This system is designed for **SEO content research and automation**.
-It works best for SEO-domain keywords backed by the curated knowledge base.
-Blog generation quality depends on Gemini API availability (free tier: 20 requests/day).
-For production use, a paid API tier is recommended.
+## Author
 
----
-
-## 🧑‍💻 Author
-
-**Ashmita Sharma**  
-B.Tech — Artificial Intelligence & Data Science  
-Delhi Technical Campus, Greater Noida  
-Affiliated to GGSIPU, New Delhi  
+Ashmita Sharma
+B.Tech, Artificial Intelligence and Data Science
+Delhi Technical Campus, Greater Noida
+Affiliated to GGSIPU, New Delhi
