@@ -195,7 +195,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-API = "http://127.0.0.1:8000"
+def get_backend_api_url() -> str:
+    try:
+        configured_url = st.secrets.get("BACKEND_API_URL", "")
+    except Exception:
+        configured_url = ""
+    return (configured_url or os.getenv("BACKEND_API_URL", "http://127.0.0.1:8000")).rstrip("/")
+
+
+API = get_backend_api_url()
 
 # ── Source URL Mapping ────────────────────────────────────────────────────────
 SOURCE_URLS = {

@@ -1,35 +1,26 @@
 import chromadb
-from sentence_transformers import SentenceTransformer
+import hashlib
+import math
+import re
 from backend.app.core.paths import get_vector_store_path
 
-# Embedding Model Management
-# CURRENT_MODEL_NAME = "all-mpnet-base-v2"
-CURRENT_MODEL_NAME = "all-MiniLM-L6-v2"
-embedding_model = SentenceTransformer(CURRENT_MODEL_NAME)
+CURRENT_MODEL_NAME = "hashing-embedding-384"
+EMBEDDING_DIMENSIONS = 384
 
 
 def set_embedding_model(model_name: str):
     """
-    Dynamically switch embedding model.
-    Useful for retrieval experiments.
+    Keep compatibility with experiment code that records an embedding model name.
     """
 
-    global embedding_model
     global CURRENT_MODEL_NAME
 
     print(f"\nSwitching embedding model to {model_name}\n")
-
-    # embedding_model = SentenceTransformer(model_name)
-    embedding_model = None
     CURRENT_MODEL_NAME = model_name
 
-def get_embedding_model():
-    global embedding_model
 
-    if embedding_model is None:
-        embedding_model = SentenceTransformer(CURRENT_MODEL_NAME)
-
-    return embedding_model  
+def _tokenize(text: str):
+    return re.findall(r"[a-z0-9]+", text.lower())
 
 
 def get_current_embedding_model():
@@ -42,12 +33,26 @@ def get_current_embedding_model():
 
 def generate_embedding(text: str):
     """
-    Generate embedding vector for given text.
+    Generate a deterministic lightweight embedding vector for ChromaDB.
+
+    This avoids loading PyTorch on small hosted instances while keeping retrieval
+    reproducible across local and Render deployments.
     """
 
-    # return embedding_model.encode(text).tolist()
-    model = get_embedding_model()
-    return model.encode(text).tolist()
+    vector = [0.0] * EMBEDDING_DIMENSIONS
+    tokens = _tokenize(text)
+
+    for token in tokens:
+        digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+        value = int.from_bytes(digest, "big")
+        index = value % EMBEDDING_DIMENSIONS
+        sign = 1.0 if ((value >> 8) & 1) else -1.0
+        vector[index] += sign
+
+    norm = math.sqrt(sum(value * value for value in vector))
+    if norm == 0:
+        return vector
+    return [value / norm for value in vector]
 
 CHROMA_PATH = str(get_vector_store_path())
 

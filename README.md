@@ -8,7 +8,7 @@ The project is designed to demonstrate that RAG can improve factual grounding an
 
 - Heading-aware semantic chunking for markdown knowledge-base documents
 - Multi-query expansion with seven semantic query variations per keyword
-- ChromaDB vector storage with SentenceTransformer embeddings
+- ChromaDB vector storage with deterministic lightweight embeddings
 - Gemini-powered blog generation with retrieved source context
 - SEO scoring across keyword density, word count, readability, structure, and keyword placement
 - RAG vs baseline experiment workflow with stored metrics

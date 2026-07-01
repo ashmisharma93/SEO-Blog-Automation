@@ -8,9 +8,6 @@ langchain-community
 chromadb
 
 numpy<2
-sentence-transformers==2.7.0
-transformers==4.41.2
-torch==2.3.1
 
 google-genai
 textstat
