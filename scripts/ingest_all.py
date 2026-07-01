@@ -7,8 +7,11 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from backend.app.db.database import SessionLocal
+from backend.app.db.database import Base, SessionLocal, engine
 from backend.app.core.paths import get_knowledge_base_path
+from backend.app import models
+from backend.app.models.document_chunk import DocumentChunk
+from backend.app.models.knowledge_source import KnowledgeSource
 from backend.app.services.rag_service import ingest_knowledge_source
 from backend.app.services.vector_store import chroma_client, get_current_embedding_model
 
@@ -43,7 +46,13 @@ def extract_metadata_and_content(file_path):
 
 
 def ingest_all_documents():
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
+
+    print("Clearing existing SQL knowledge base records...")
+    db.query(DocumentChunk).delete()
+    db.query(KnowledgeSource).delete()
+    db.commit()
 
     print("Clearing existing vector collection...")
 
