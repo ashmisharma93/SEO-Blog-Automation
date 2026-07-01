@@ -151,7 +151,7 @@ The strongest expected advantage of RAG is not merely a higher SEO score. It is 
 
 ## Author
 
-Ashmita Sharma
-B.Tech, Artificial Intelligence and Data Science
-Delhi Technical Campus, Greater Noida
+Ashmita Sharma  
+B.Tech, Artificial Intelligence and Data Science  
+Delhi Technical Campus, Greater Noida  
 Affiliated to GGSIPU, New Delhi
