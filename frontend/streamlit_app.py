@@ -204,6 +204,7 @@ def get_backend_api_url() -> str:
 
 
 API = get_backend_api_url()
+st.sidebar.write("Backend URL:", API)
 
 # ── Source URL Mapping ────────────────────────────────────────────────────────
 SOURCE_URLS = {
@@ -784,7 +785,7 @@ elif page == "🧪 Experiment Lab":
             status.empty()
             countdown.empty()
             st.success(f"Batch complete! Ran {len(kws)} experiments.")
-            st.dataframe(pd.DataFrame(results_log).style.applymap(lambda v: "color: #00e5a0" if isinstance(v, float) and v >= 0 else "color: #ff4d6d", subset=["seo_delta"]), use_container_width=True)
+            st.dataframe(pd.DataFrame(results_log).style.map(lambda v: "color: #00e5a0" if isinstance(v, float) and v >= 0 else "color: #ff4d6d", subset=["seo_delta"]), use_container_width=True)
 
     st.markdown("---")
 
@@ -1086,7 +1087,7 @@ elif page == "📋 All Records":
             return ""
 
         styled = display_df.style\
-            .applymap(color_delta, subset=["SEO Δ"])\
+            .map(color_delta, subset=["SEO Δ"])\
             .format({
                 "Baseline SEO": "{:.1f}", "RAG SEO": "{:.1f}",
                 "SEO Δ": "{:+.2f}",
@@ -1234,56 +1235,27 @@ elif page == "🔍 RAG Explainability":
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: KNOWLEDGE BASE EXPLORER
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "📚 Knowledge Base":
+# -----------------------------------------------------------------------------
+elif page == "?? Knowledge Base":
 
     st.markdown("<div class='section-title'>KNOWLEDGE BASE EXPLORER</div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#6b7fa3; font-size:14px; margin-bottom:24px;'>Explore all documents in your RAG knowledge base — see chunk counts, categories, and sources powering the system.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#6b7fa3; font-size:14px; margin-bottom:24px;'>Explore all documents in your hosted RAG knowledge base, including chunk counts, categories, and sources powering the system.</p>", unsafe_allow_html=True)
 
     try:
-        import sys, os
-        _base = os.path.dirname(os.path.abspath(__file__))
-        for _candidate in [
-            os.path.join(_base, "backend"),
-            os.path.join(_base, "..", "backend"),
-            os.path.join(_base, "../backend"),
-        ]:
-            if os.path.isdir(_candidate):
-                sys.path.insert(0, _candidate)
-                break
-        from backend.app.services.vector_store import collection
+        kb_stats, kb_err = api_get("/rag/knowledge-base/stats")
+        if kb_err:
+            raise RuntimeError(kb_err)
 
-        total_chunks = collection.count()
-        all_data = collection.get(include=["metadatas", "documents"])
-        metadatas = all_data.get("metadatas", [])
-        documents = all_data.get("documents", [])
-
-        # Summary metrics
-        titles = list(set(m.get("title", "Unknown") for m in metadatas))
-        categories = list(set(m.get("category", "Unknown") for m in metadatas))
+        documents = kb_stats.get("documents", [])
 
         c1, c2, c3, c4 = st.columns(4)
-        with c1: st.metric("Total Chunks", total_chunks)
-        with c2: st.metric("Knowledge Files", len(titles))
-        with c3: st.metric("Categories", len(categories))
-        with c4: st.metric("Embedding Model", "all-mpnet-base-v2")
+        with c1: st.metric("Total Chunks", kb_stats.get("total_chunks", 0))
+        with c2: st.metric("Knowledge Files", kb_stats.get("knowledge_files", 0))
+        with c3: st.metric("Categories", len(kb_stats.get("categories", [])))
+        with c4: st.metric("Embedding Model", kb_stats.get("embedding_model", "unknown"))
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Build per-document stats
-        doc_stats = {}
-        for meta, doc in zip(metadatas, documents):
-            title = meta.get("title", "Unknown")
-            cat   = meta.get("category", "Unknown")
-            src   = meta.get("source", "Unknown")
-            if title not in doc_stats:
-                doc_stats[title] = {"category": cat, "source": src, "chunks": 0, "total_chars": 0, "previews": []}
-            doc_stats[title]["chunks"] += 1
-            doc_stats[title]["total_chars"] += len(doc)
-            if len(doc_stats[title]["previews"]) < 2:
-                doc_stats[title]["previews"].append(doc[:200])
-
-        # Category colors
         cat_colors = {
             "technical_seo": C_ACCENT, "keyword_research": C_PURPLE,
             "on_page_seo": C_GREEN, "link_building": C_GOLD,
@@ -1293,62 +1265,67 @@ elif page == "📚 Knowledge Base":
             "schema_markup": "#facc15", "voice_search_seo": "#4ade80",
         }
 
-        # Chunk distribution chart
         st.markdown("<div class='section-title'>CHUNK DISTRIBUTION BY DOCUMENT</div>", unsafe_allow_html=True)
         chart_df = pd.DataFrame([
-            {"Document": t, "Chunks": s["chunks"], "Category": s["category"]}
-            for t, s in doc_stats.items()
-        ]).sort_values("Chunks", ascending=True)
+            {"Document": item["title"], "Chunks": item["chunks"], "Category": item["category"]}
+            for item in documents
+        ])
 
-        fig_kb = go.Figure(go.Bar(
-            x=chart_df["Chunks"],
-            y=chart_df["Document"],
-            orientation="h",
-            marker_color=[cat_colors.get(c, C_MUTED) for c in chart_df["Category"]],
-            marker_line_width=0,
-            text=chart_df["Chunks"],
-            textposition="outside",
-            textfont=dict(color=C_MUTED, size=11)
-        ))
-        fig_kb.update_layout(**get_plot_layout(), height=380, xaxis_title="Number of Chunks", yaxis_title="")
-        st.plotly_chart(fig_kb, use_container_width=True)
+        if chart_df.empty:
+            st.warning("No knowledge base chunks found. Re-run ingestion on the backend.")
+        else:
+            chart_df = chart_df.sort_values("Chunks", ascending=True)
+            fig_kb = go.Figure(go.Bar(
+                x=chart_df["Chunks"],
+                y=chart_df["Document"],
+                orientation="h",
+                marker_color=[cat_colors.get(c, C_MUTED) for c in chart_df["Category"]],
+                marker_line_width=0,
+                text=chart_df["Chunks"],
+                textposition="outside",
+                textfont=dict(color=C_MUTED, size=11)
+            ))
+            fig_kb.update_layout(**get_plot_layout(), height=380, xaxis_title="Number of Chunks", yaxis_title="")
+            st.plotly_chart(fig_kb, use_container_width=True)
 
-        # Document cards
-        st.markdown("<div class='section-title'>DOCUMENT DETAILS</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>DOCUMENT DETAILS</div>", unsafe_allow_html=True)
 
-        for title, stats in sorted(doc_stats.items(), key=lambda x: x[1]["chunks"], reverse=True):
-            cat = stats["category"]
-            color = cat_colors.get(cat, C_MUTED)
-            with st.expander(f"📄 {title}  |  {stats['chunks']} chunks  |  ~{stats['total_chars']:,} chars"):
-                col_a, col_b = st.columns([1, 2])
-                with col_a:
-                    st.markdown(f"""
-                    <div style='background:#0f1629; border:1px solid {color}33; border-radius:10px; padding:16px;'>
-                        <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Category</div>
-                        <div style='font-family:Space Mono,monospace; font-size:12px; color:{color}; margin-bottom:12px;'>{cat}</div>
-                        <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Chunks</div>
-                        <div style='font-family:Space Mono,monospace; font-size:18px; color:{color}; margin-bottom:12px;'>{stats["chunks"]}</div>
-                        <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Total Content</div>
-                        <div style='font-family:Space Mono,monospace; font-size:12px; color:#e8eef8;'>{stats["total_chars"]:,} chars</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col_b:
-                    st.markdown(f"<div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;'>Source</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='font-size:11px; color:#6b7fa3; font-style:italic; margin-bottom:12px;'>{stats['source']}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;'>Sample Chunk Preview</div>", unsafe_allow_html=True)
-                    for prev in stats["previews"][:1]:
+            for stats in sorted(documents, key=lambda item: item["chunks"], reverse=True):
+                title = stats["title"]
+                cat = stats["category"]
+                color = cat_colors.get(cat, C_MUTED)
+                with st.expander(f"{title}  |  {stats['chunks']} chunks  |  ~{stats['total_chars']:,} chars"):
+                    col_a, col_b = st.columns([1, 2])
+                    with col_a:
                         st.markdown(f"""
-                        <div style='background:#0f1629; border:1px solid #1e2d50; border-left:3px solid {color};
-                                    border-radius:6px; padding:12px; font-size:11px; color:#6b7fa3;
-                                    line-height:1.7; white-space:pre-wrap;'>{prev}...</div>
+                        <div style='background:#0f1629; border:1px solid {color}33; border-radius:10px; padding:16px;'>
+                            <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Category</div>
+                            <div style='font-family:Space Mono,monospace; font-size:12px; color:{color}; margin-bottom:12px;'>{cat}</div>
+                            <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Chunks</div>
+                            <div style='font-family:Space Mono,monospace; font-size:18px; color:{color}; margin-bottom:12px;'>{stats["chunks"]}</div>
+                            <div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;'>Total Content</div>
+                            <div style='font-family:Space Mono,monospace; font-size:12px; color:#e8eef8;'>{stats["total_chars"]:,} chars</div>
+                        </div>
                         """, unsafe_allow_html=True)
+                    with col_b:
+                        st.markdown("<div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;'>Source</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:11px; color:#6b7fa3; font-style:italic; margin-bottom:12px;'>{stats.get('source', 'Unknown')}</div>", unsafe_allow_html=True)
+                        if stats.get("source_url"):
+                            first_url = stats["source_url"].split(";")[0].strip()
+                            st.markdown(f"<a href='{first_url}' target='_blank' style='color:#00d4ff; font-size:12px;'>Open primary source</a>", unsafe_allow_html=True)
+                        st.markdown("<div style='font-size:10px; color:#6b7fa3; text-transform:uppercase; letter-spacing:1px; margin:12px 0 8px;'>Sample Chunk Preview</div>", unsafe_allow_html=True)
+                        for prev in stats.get("previews", [])[:1]:
+                            st.markdown(f"""
+                            <div style='background:#0f1629; border:1px solid #1e2d50; border-left:3px solid {color};
+                                        border-radius:6px; padding:12px; font-size:11px; color:#6b7fa3;
+                                        line-height:1.7; white-space:pre-wrap;'>{prev}...</div>
+                            """, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"Could not load knowledge base: {str(e)}")
-        st.info("Make sure you are running Streamlit from the project root directory and ChromaDB is populated.")
+        st.info("Make sure the Render backend is live and the knowledge base ingestion completed successfully.")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # PAGE: SEO SITE AUDIT (Google PageSpeed Insights API)
 # ══════════════════════════════════════════════════════════════════════════════
 elif page == "🌐 SEO Site Audit":
