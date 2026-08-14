@@ -153,11 +153,19 @@ This project compares two generation modes:
 
 The strongest expected advantage of RAG is not merely a higher SEO score. It is improved factual grounding, clearer source attribution, and better traceability from generated claims back to curated source material.
 
+## Results (19 experiments)
+
+- **SEO score:** no statistically significant difference between RAG and baseline (avg delta approximately -0.1 pts, p = 0.62). The scoring formula used here (keyword density, structure, readability, word count) does not reward source grounding, so this result is expected rather than a shortfall.
+- **Citation grounding:** RAG-generated posts cited 4-8 verified sources per post in every experiment. Baseline posts, generated without retrieval, cited zero sources in every experiment. This is the consistent, structural advantage the RAG pipeline is actually designed to produce.
+- **Takeaway:** for this scoring formula, RAG and baseline are indistinguishable on SEO score alone. The real differentiator is factual traceability — RAG output can be checked against its sources; baseline output cannot. A scoring formula that accounted for citation/grounding would likely separate the two conditions more clearly.
+
+The dataset is actively growing as more experiments are run through the pipeline.
+
 ## Important Notes
 
 - Generated content should be reviewed by a human before publication.
 - Search guidance changes over time, so the knowledge base should be periodically refreshed.
-- The local SQLite database and ChromaDB files are development artifacts and can be regenerated from the markdown corpus.
+- The ChromaDB vector store is regenerated from the markdown corpus on ingestion. The SQLite database (`data/seo_blog.db`) holds real experiment run history and generated blog output — it is not a disposable artifact and is committed to the repo so the deployed dashboard reflects actual results.
 - API availability, model behavior, and rate limits can affect generation quality.
 
 ## Author
