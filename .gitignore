@@ -54,11 +54,6 @@ Thumbs.db
 logs/
 uvicorn.log
 
-# ── Test and Demo Scripts (internal use only) ─────────────────────────────────
-scripts/cleanup_experiments.py
-scripts/restore_negatives.py
-scripts/demo_data_seeder.py
-
 # ── Jupyter Notebooks (if any) ───────────────────────────────────────────────
 .ipynb_checkpoints/
 *.ipynb
