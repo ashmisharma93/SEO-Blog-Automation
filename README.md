@@ -4,6 +4,13 @@ An SEO content research project that compares Retrieval-Augmented Generation (RA
 
 The project is designed to demonstrate that RAG can improve factual grounding and source attribution for domain-specific content generation, especially when the baseline model is asked to answer without retrieved context.
 
+## Live Demo
+
+**Dashboard:** https://seo-blog-automation-djhzdxtpwuzr4dlxyhwsee.streamlit.app
+**Backend API docs:** https://seo-blog-backend-tjan.onrender.com/docs
+
+> Note: the backend runs on a free-tier instance and may take 30-60 seconds to wake up if it's been idle. If the dashboard shows "Backend Offline" on first load, wait a moment and refresh.
+
 ## Core Capabilities
 
 - Heading-aware semantic chunking for markdown knowledge-base documents
@@ -94,7 +101,11 @@ Create a `.env` file in the project root and add:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
-HF_API_KEY=optional_hugging_face_key
+PAGESPEED_API_KEY=your_pagespeed_api_key
+
+# Optional — enables AI-generated blog header images via Hugging Face.
+# Not set in the live deployment; the app runs fully without it.
+# HF_API_KEY=your_hugging_face_key
 ```
 
 ### 4. Ingest the knowledge base

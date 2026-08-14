@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from backend.app.db.database import get_db
 from backend.app.services.rag_service import ingest_knowledge_source, retrieve_relevant_chunks
 from backend.app.services.experiment_service import run_experiment, get_experiment_summary
+from backend.app.services.vector_store import chroma_client, get_current_embedding_model
 
 router = APIRouter(prefix="/rag", tags=["RAG"])
 
@@ -33,6 +34,46 @@ def ingest(request: IngestRequest, db: Session = Depends(get_db)):
 @router.post("/retrieve")
 def retrieve(request: RetrieveRequest):
     return retrieve_relevant_chunks(request.query, request.top_k)
+
+
+@router.get("/knowledge-base/stats")
+def knowledge_base_stats():
+    collection = chroma_client.get_or_create_collection(name="seo_knowledge_base")
+    data = collection.get(include=["metadatas", "documents"])
+    metadatas = data.get("metadatas", []) or []
+    documents = data.get("documents", []) or []
+
+    doc_stats = {}
+    for meta, document in zip(metadatas, documents):
+        meta = meta or {}
+        title = meta.get("title", "Unknown")
+        if title not in doc_stats:
+            doc_stats[title] = {
+                "title": title,
+                "category": meta.get("category", "Unknown"),
+                "source": meta.get("source", "Unknown"),
+                "source_url": meta.get("source_url", ""),
+                "chunks": 0,
+                "total_chars": 0,
+                "previews": [],
+            }
+        doc_stats[title]["chunks"] += 1
+        doc_stats[title]["total_chars"] += len(document or "")
+        if len(doc_stats[title]["previews"]) < 2:
+            doc_stats[title]["previews"].append((document or "")[:200])
+
+    categories = sorted({
+        (meta or {}).get("category", "Unknown")
+        for meta in metadatas
+    })
+
+    return {
+        "total_chunks": collection.count(),
+        "knowledge_files": len(doc_stats),
+        "categories": categories,
+        "embedding_model": get_current_embedding_model(),
+        "documents": sorted(doc_stats.values(), key=lambda item: item["chunks"], reverse=True),
+    }
 
 
 # Run Experiment 
