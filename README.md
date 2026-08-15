@@ -168,9 +168,8 @@ The dataset is actively growing as more experiments are run through the pipeline
 - The ChromaDB vector store is regenerated from the markdown corpus on ingestion. The SQLite database (`data/seo_blog.db`) holds real experiment run history and generated blog output — it is not a disposable artifact and is committed to the repo so the deployed dashboard reflects actual results.
 - API availability, model behavior, and rate limits can affect generation quality.
 
-## Author
+## Author & Contact
 
 Ashmita Sharma  
-B.Tech, Artificial Intelligence and Data Science  
-Delhi Technical Campus, Greater Noida  
-Affiliated to GGSIPU, New Delhi
+Email: as.ashmitasharma93@gmail.com
+Linkedin: https://linkedin.com/in/ashmitasharma93034
