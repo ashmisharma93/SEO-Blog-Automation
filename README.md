@@ -171,5 +171,5 @@ The dataset is actively growing as more experiments are run through the pipeline
 ## Author & Contact
 
 Ashmita Sharma  
-Email: as.ashmitasharma93@gmail.com
-Linkedin: https://linkedin.com/in/ashmitasharma93034
+- Email: as.ashmitasharma93@gmail.com
+- Linkedin: https://linkedin.com/in/ashmitasharma93034
