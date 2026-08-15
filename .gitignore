@@ -17,19 +17,18 @@ env/
 .venv
 seo_blog_env/
 
-# ── Environment Variables (NEVER commit API keys) ─────────────────────────────
+# ── Environment Variables  ─────────────────────────────
 .env
 .env.local
 .env.production
 *.env
 
-# ── Database (contains experiment data — keep local) ─────────────────────────
+# ── Database ───────────────────────────────────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
-data/seo_blog.db
-backend/seo_blog.db
-seo_blog.db
+!data/seo_blog.db
+data/seo_blog_backup.db
 
 # ── ChromaDB Vector Store (large binary files) ────────────────────────────────
 data/vector_store/
@@ -54,7 +53,7 @@ Thumbs.db
 logs/
 uvicorn.log
 
-# ── Jupyter Notebooks (if any) ───────────────────────────────────────────────
+# ── Jupyter Notebooks ───────────────────────────────────────────────
 .ipynb_checkpoints/
 *.ipynb
 
