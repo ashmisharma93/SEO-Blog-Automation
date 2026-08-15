@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 if "selected_blog" not in st.session_state:
     st.session_state.selected_blog = None
 
-# ── Topic-aware Plotly banner config ─────────────────────────────────────────
+# Topic-aware Plotly banner Config
 TOPIC_CONFIGS = {
     "technical":     {"color": "#00d4ff", "bg": "#0a1628", "icon": "⚙️"},
     "on page":       {"color": "#a855f7", "bg": "#130a28", "icon": "📝"},
@@ -110,7 +110,7 @@ def make_section_banner(heading_text: str, keyword: str):
         yaxis=dict(visible=False, range=[0,1]))
     return fig
 
-# ── HF Image Generation ──────────────────────────────────────────────────────
+# HF Image Generation
 import base64 as _b64, time as _time
 
 _IMAGE_CACHE = {}  # in-memory cache: cache_key -> base64 string
@@ -187,7 +187,7 @@ def fetch_hf_image(keyword: str, section: str = "") -> str | None:
             return None
     return None
 
-# ── Page Config ───────────────────────────────────────────────────────────────
+# Page Config
 st.set_page_config(
     page_title="SEO Blog Automation System",
     page_icon="⚡",
@@ -206,7 +206,7 @@ def get_backend_api_url() -> str:
 API = get_backend_api_url()
 st.sidebar.write("Backend URL:", API)
 
-# ── Source URL Mapping ────────────────────────────────────────────────────────
+# Source URL Mapping 
 SOURCE_URLS = {
     "Google Search Central":    "https://developers.google.com/search",
     "Moz":                      "https://moz.com/learn/seo",
@@ -415,7 +415,7 @@ def api_post(path, params=None, json=None):
         return None, str(e)
 
 
-# ── Plotly Theme ──────────────────────────────────────────────────────────────
+# Plotly Theme
 def get_plot_layout():
     """Dark for dashboard, white for paper screenshots."""
     paper_mode = st.session_state.get("paper_mode", False)
@@ -466,9 +466,7 @@ C_RED    = "#ff4d6d"
 C_MUTED  = "#6b7fa3"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # SIDEBAR
-# ══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""
     <div style='text-align:center; padding: 20px 0 24px;'>
@@ -511,9 +509,8 @@ with st.sidebar:
     st.markdown("<div style='font-size:11px; color:#6b7fa3; text-align:center;'>Graduation Project · 2026</div>", unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: OVERVIEW
-# ══════════════════════════════════════════════════════════════════════════════
+# PAGE: Overview
+
 if page == "📊 Overview":
 
     st.markdown("<div class='section-title'>OVERVIEW DASHBOARD</div>", unsafe_allow_html=True)
@@ -616,7 +613,7 @@ if page == "📊 Overview":
                 yaxis_title="Citation Count")
             st.plotly_chart(fig_cit, use_container_width=True)
 
-        # ── Citation callout box ──────────────────────────────────────────────
+        # Citation callout box
         st.markdown("""
         <div style='background:#00e5a010;border:1px solid #00e5a044;border-radius:10px;
                     padding:14px 20px;margin-bottom:20px;'>
@@ -632,7 +629,7 @@ if page == "📊 Overview":
         </div>
         """, unsafe_allow_html=True)
 
-        # ── Row 2: SEO Improvement bar (clean, sorted) ───────────────────────
+        # Row 2: SEO Improvement bar (clean, sorted) 
         st.markdown("<div class='section-title'>SEO IMPROVEMENT BY KEYWORD (RAG − BASELINE)</div>", unsafe_allow_html=True)
         df_sorted = df_best.sort_values("seo_improvement", ascending=True)
         colors_imp = [C_RED if v < 0 else C_GREEN for v in df_sorted["seo_improvement"]]
@@ -650,7 +647,7 @@ if page == "📊 Overview":
         fig_imp.update_layout(**get_plot_layout(), height=300, xaxis_tickangle=-35, yaxis_title="SEO Score Delta (pts)")
         st.plotly_chart(fig_imp, use_container_width=True)
 
-        # ── Row 3: Retrieval Quality scatter + Readability ────────────────────
+        # Row 3: Retrieval Quality scatter + Readability 
         col3, col4 = st.columns(2)
         with col3:
             st.markdown("<div class='section-title'>RETRIEVAL QUALITY vs SEO IMPROVEMENT</div>", unsafe_allow_html=True)
@@ -732,9 +729,7 @@ if page == "📊 Overview":
             st.plotly_chart(fig4, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: EXPERIMENT LAB
-# ══════════════════════════════════════════════════════════════════════════════
+# PAGE: Experiment Lab
 elif page == "🧪 Experiment Lab":
 
     st.markdown("<div class='section-title'>EXPERIMENT LAB</div>", unsafe_allow_html=True)
@@ -919,9 +914,8 @@ elif page == "🧪 Experiment Lab":
                 st.plotly_chart(fig, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # PAGE: BLOG GENERATOR
-# ══════════════════════════════════════════════════════════════════════════════
+
 elif page == "✍ Blog Generator":
 
     st.markdown("<div class='section-title'>BLOG GENERATOR</div>", unsafe_allow_html=True)
@@ -988,7 +982,6 @@ elif page == "✍ Blog Generator":
         if st.button("⬅ Back to Generator"):
             st.session_state.selected_blog = None
 
-    # ================= GENERATOR MODE =================
     else:
 
         col1, col2 = st.columns([1.8, 1.2])
@@ -1009,7 +1002,7 @@ elif page == "✍ Blog Generator":
                     else:
                         st.success("Blog Generated!")
 
-        # ================= BLOG HISTORY =================
+       
         with col2:
             st.markdown("### Blog History")
 
@@ -1030,9 +1023,7 @@ elif page == "✍ Blog Generator":
             else:
                 st.info("No blogs yet")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: ALL RECORDS
-# ══════════════════════════════════════════════════════════════════════════════
+# PAGE: All Records
 elif page == "📋 All Records":
 
     st.markdown("<div class='section-title'>ALL EXPERIMENT RECORDS</div>", unsafe_allow_html=True)
@@ -1107,9 +1098,7 @@ elif page == "📋 All Records":
         )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: RAG EXPLAINABILITY
-# ══════════════════════════════════════════════════════════════════════════════
+# PAGE: RAG Explainability
 elif page == "🔍 RAG Explainability":
 
     st.markdown("<div class='section-title'>RAG EXPLAINABILITY PANEL</div>", unsafe_allow_html=True)
@@ -1233,9 +1222,7 @@ elif page == "🔍 RAG Explainability":
         st.warning("Please enter a keyword first.")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: KNOWLEDGE BASE EXPLORER
-# -----------------------------------------------------------------------------
+# PAGE: Knowledge Base Explorer
 elif page == "?? Knowledge Base":
 
     st.markdown("<div class='section-title'>KNOWLEDGE BASE EXPLORER</div>", unsafe_allow_html=True)
@@ -1327,7 +1314,6 @@ elif page == "?? Knowledge Base":
 
 
 # PAGE: SEO SITE AUDIT (Google PageSpeed Insights API)
-# ══════════════════════════════════════════════════════════════════════════════
 elif page == "🌐 SEO Site Audit":
 
     st.markdown("<div class='section-title'>SEO SITE AUDIT — Powered by Google PageSpeed Insights</div>", unsafe_allow_html=True)
